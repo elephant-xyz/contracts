@@ -21,6 +21,8 @@ contract VMahout is
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
+    error VMahout__TransferNotAllowed();
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -44,6 +46,28 @@ contract VMahout is
 
     function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
         _mint(to, amount);
+    }
+
+    function transfer(
+        address to,
+        uint256 amount
+    ) public override returns (bool) {
+        revert VMahout__TransferNotAllowed();
+    }
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public override returns (bool) {
+        revert VMahout__TransferNotAllowed();
+    }
+
+    function approve(
+        address spender,
+        uint256 amount
+    ) public override returns (bool) {
+        revert VMahout__TransferNotAllowed();
     }
 
     function _authorizeUpgrade(
