@@ -2,6 +2,9 @@ import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { ethers } from "ethers";
 
+// Simple sleep helper
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 // Helper to verify a contract and swallow errors (e.g. already verified)
 async function verifySafe(
   hre: HardhatRuntimeEnvironment,
@@ -61,6 +64,11 @@ export default task("deploy-vmahout", "Deploy VMahout token")
 
     // Verify implementation & proxy when running on a real network
     if (!["hardhat", "localhost"].includes(hre.network.name)) {
+      console.log(
+        "Waiting 90 seconds before verification so explorer can index the deployment…",
+      );
+      await sleep(90_000);
+
       const implAddress =
         await hre.upgrades.erc1967.getImplementationAddress(proxyAddress);
       console.log(`Verifying implementation at ${implAddress}…`);
@@ -114,6 +122,11 @@ export const upgradeTask = task("upgrade-vmahout", "Upgrade VMahout token")
 
     // Verify new implementation & (re-)verify proxy on real networks
     if (!["hardhat", "localhost"].includes(hre.network.name)) {
+      console.log(
+        "Waiting 90 seconds before verification so explorer can index the upgrade…",
+      );
+      await sleep(90_000);
+
       const implAddress =
         await hre.upgrades.erc1967.getImplementationAddress(proxy);
       console.log(`Verifying new implementation at ${implAddress}…`);
