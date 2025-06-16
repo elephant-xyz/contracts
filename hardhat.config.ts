@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import "@nomicfoundation/hardhat-toolbox";
 import "@openzeppelin/hardhat-upgrades";
 import "@rumblefishdev/hardhat-kms-signer";
+import "./tasks/vmahout";
 
 const DEFAULT_GAS_LIMIT = process.env.GAS_LIMIT
   ? parseInt(process.env.GAS_LIMIT)
@@ -23,39 +24,45 @@ const config: HardhatUserConfig = {
   sourcify: {
     enabled: true,
   },
-  networks: {
-    // For local development
-    hardhat: {
-      chainId: 31337,
-    },
-    // For local node
-    localhost: {
-      url: "http://127.0.0.1:8545",
-    },
-    amoy: {
-      url: process.env.AMOY_RPC_URL,
-      // accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      gas: DEFAULT_GAS_LIMIT,
-      kmsKeyId: process.env.KMS_KEY_ID,
-      gasPrice: 35000000000,
-      minMaxFeePerGas: 1600000000,
-      minMaxPriorityFeePerGas: Number(ethers.parseUnits("25", "gwei")), // Use hethers
-    },
-    polygon: {
-      url: process.env.POLYGON_MAINNET_RPC_URL,
-      kmsKeyId: process.env.KMS_KEY_ID,
-      // accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      // gas: DEFAULT_GAS_LIMIT,
-      gas: "auto",
-      gasPrice: 35000000000,
-      minMaxFeePerGas: 1600000000,
-      minMaxPriorityFeePerGas: Number(ethers.parseUnits("25", "gwei")), // Use hethers
+  networks: (() => {
+    const nets: Record<string, any> = {
+      // For local development
+      hardhat: {
+        chainId: 31337,
+      },
+      // For local node
+      localhost: {
+        url: "http://127.0.0.1:8545",
+      },
+    };
 
-      loggingEnabled: true,
-      throwOnCallFailures: true,
-      throwOnTransactionFailures: true,
-    },
-  },
+    if (process.env.AMOY_RPC_URL) {
+      nets["amoy"] = {
+        url: process.env.AMOY_RPC_URL,
+        gas: DEFAULT_GAS_LIMIT,
+        kmsKeyId: process.env.KMS_KEY_ID,
+        gasPrice: 35000000000,
+        minMaxFeePerGas: 1600000000,
+        minMaxPriorityFeePerGas: Number(ethers.parseUnits("25", "gwei")),
+      };
+    }
+
+    if (process.env.POLYGON_MAINNET_RPC_URL) {
+      nets["polygon"] = {
+        url: process.env.POLYGON_MAINNET_RPC_URL,
+        kmsKeyId: process.env.KMS_KEY_ID,
+        gas: "auto",
+        gasPrice: 35000000000,
+        minMaxFeePerGas: 1600000000,
+        minMaxPriorityFeePerGas: Number(ethers.parseUnits("25", "gwei")),
+        loggingEnabled: true,
+        throwOnCallFailures: true,
+        throwOnTransactionFailures: true,
+      };
+    }
+
+    return nets;
+  })(),
   etherscan: {
     apiKey: {
       polygon: process.env.POLYGONSCAN_API_KEY || ETHERSCAN_API_KEY,

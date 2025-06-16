@@ -10,7 +10,9 @@
     "lint": "solhint 'contracts/**/*.sol'",
     "format:check": "prettier --check \"**/*.{ts,js,yaml,sol}\"",
     "format": "prettier --write \"**/*.{ts,js,yaml,sol}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "deploy:vmahout": "hardhat deploy-vmahout",
+    "upgrade:vmahout": "hardhat upgrade-vmahout"
   },
   "keywords": [],
   "author": "",
