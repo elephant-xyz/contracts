@@ -2,11 +2,25 @@ import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { ethers } from "ethers";
 
+// Helper to verify a contract and swallow errors (e.g. already verified)
+async function verifySafe(
+  hre: HardhatRuntimeEnvironment,
+  addr: string,
+  extra: Record<string, any> = {},
+) {
+  try {
+    await hre.run("verify:verify", { address: addr, ...extra });
+  } catch (err: any) {
+    console.warn(
+      `Verification skipped/failed for ${addr}: ${err.message ?? err}`,
+    );
+  }
+}
+
 /**
  * Hardhat task: deploy-vmahout
  * Deploys the VMahout ERC20Votes token behind a UUPS proxy.
  *   --minter <address>   Address that will receive the MINTER_ROLE.
- *   --verify             (optional) Verify the implementation on Etherscan.
  */
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
 export default task("deploy-vmahout", "Deploy VMahout token")
@@ -16,14 +30,8 @@ export default task("deploy-vmahout", "Deploy VMahout token")
     undefined,
     types.string,
   )
-  .addOptionalParam(
-    "verify",
-    "Verify implementation on Etherscan",
-    false,
-    types.boolean,
-  )
   .setAction(async (taskArgs, hre: HardhatRuntimeEnvironment) => {
-    const { minter, verify } = taskArgs;
+    const { minter } = taskArgs;
 
     if (!ethers.isAddress(minter)) {
       throw new Error(`Invalid minter address: ${minter}`);
@@ -51,12 +59,23 @@ export default task("deploy-vmahout", "Deploy VMahout token")
     const proxyAddress = await proxy.getAddress();
     console.log(`VMahout proxy deployed at: ${proxyAddress}`);
 
-    // Optionally verify the implementation contract
-    if (verify) {
+    // Verify implementation & proxy when running on a real network
+    if (!["hardhat", "localhost"].includes(hre.network.name)) {
       const implAddress =
         await hre.upgrades.erc1967.getImplementationAddress(proxyAddress);
       console.log(`Verifying implementation at ${implAddress}…`);
-      await hre.run("verify:verify", { address: implAddress });
+      await verifySafe(hre, implAddress);
+
+      const initData = VMahoutFactory.interface.encodeFunctionData(
+        "initialize",
+        [deployer.address, minter, deployer.address],
+      );
+      console.log(`Verifying proxy at ${proxyAddress}…`);
+      await verifySafe(hre, proxyAddress, {
+        contract:
+          "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy",
+        constructorArguments: [implAddress, initData],
+      });
     }
 
     return proxyAddress;
@@ -84,7 +103,6 @@ export const upgradeTask = task("upgrade-vmahout", "Upgrade VMahout token")
 
     const VMahoutFactory = await hre.ethers.getContractFactory("VMahout");
 
-    // Ensure the proxy is registered in the upgrades manifest when running on a fresh environment.
     await hre.upgrades.forceImport(proxy, VMahoutFactory, { kind: "uups" });
 
     const upgraded = await hre.upgrades.upgradeProxy(proxy, VMahoutFactory);
@@ -93,6 +111,20 @@ export const upgradeTask = task("upgrade-vmahout", "Upgrade VMahout token")
     console.log(
       `Upgrade complete. Proxy still at: ${await upgraded.getAddress()}`,
     );
+
+    // Verify new implementation & (re-)verify proxy on real networks
+    if (!["hardhat", "localhost"].includes(hre.network.name)) {
+      const implAddress =
+        await hre.upgrades.erc1967.getImplementationAddress(proxy);
+      console.log(`Verifying new implementation at ${implAddress}…`);
+      await verifySafe(hre, implAddress);
+
+      // Attempt proxy verification again (will be skipped if already verified)
+      await verifySafe(hre, proxy, {
+        contract:
+          "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy",
+      });
+    }
 
     return upgraded.getAddress();
   });
