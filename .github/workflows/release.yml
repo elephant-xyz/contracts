@@ -1,8 +1,5 @@
-# .github/workflows/deploy.yml
+name: Release
 
-name: Release to Polygon
-
-# Trigger only on pushes to the main branch
 on:
   push:
     branches: [main]
@@ -18,52 +15,29 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Environment variables needed for deployment to the 'polygon' network
-      # Ensure these secrets are configured in your GitHub Repo/Environment settings
-      AMOY_RPC_URL: ${{ secrets.AMOY_RPC_URL }}
       POLYGON_MAINNET_RPC_URL: ${{ secrets.POLYGON_MAINNET_RPC_URL }}
       POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
       KMS_KEY_ID: ${{ secrets.RELEASE_KMS_KEY_ID }}
-
-      # IMPORTANT: These proxy addresses MUST be set as GitHub secrets for the 'polygon' environment
-      # e.g., PDC_PROXY_ADDRESS_MAINNET, PCR_PROXY_ADDRESS_MAINNET
-      # These are placeholders and need to be replaced with actual secret names you configure.
-      PDC_PROXY_ADDRESS: ${{ secrets.PDC_PROXY_ADDRESS_MAINNET }}
-      PCR_PROXY_ADDRESS: ${{ secrets.PCR_PROXY_ADDRESS_MAINNET }}
-
-      # Optional: Define an address to approve if forceImport occurs during upgrade tasks on mainnet
-      # This should be a highly controlled address, managed via secrets.
-      # APPROVE_ACCOUNT_ON_IMPORT_MAINNET: ${{ secrets.APPROVE_ACCOUNT_ON_IMPORT_MAINNET }}
-
-      # Standard CI flag (optional, but sometimes useful)
-      CI: true
+      AWS_ROLE_TO_ASSUME: ${{ secrets.RELEASE_ROLE }}
 
     steps:
-      # 1. Checkout Repository
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetch full history, might be needed by some tools
+          fetch-depth: 0
 
-      # 2. Setup Node.js Environment
-      # Use a specific Node version suitable for deployment (e.g., LTS)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x" # Or your preferred LTS version
+          node-version: "22.x"
           cache: "npm"
 
-      # 3. Configure AWS Credentials using OIDC
-      # Assumes the same IAM role and region as your CI workflow
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          # Use secrets for Role ARN and Region
-          role-to-assume: ${{ secrets.RELEASE_ROLE }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           aws-region: "us-east-1"
 
-      # 4. Install Dependencies
-      # Use 'npm ci' for clean, reproducible installs in deployment
       - name: Install Dependencies
         run: npm ci
 
