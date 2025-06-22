@@ -137,9 +137,7 @@ export const upgradeTask = task("upgrade-vmahout", "Upgrade VMahout token")
     // Grant MINTER_ROLE if minter address provided
     if (minter) {
       console.log(`Granting MINTER_ROLE to ${minter}…`);
-      const MINTER_ROLE = hre.ethers.keccak256(
-        hre.ethers.toUtf8Bytes("MINTER_ROLE"),
-      );
+      const MINTER_ROLE = await upgraded.MINTER_ROLE();
       const grantRoleTx = await upgraded.grantRole(MINTER_ROLE, minter);
       await grantRoleTx.wait();
       console.log(`MINTER_ROLE granted to ${minter}`);
