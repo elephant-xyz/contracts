@@ -93,21 +93,35 @@ export default task("deploy-vmahout", "Deploy VMahout token")
  * Hardhat task: upgrade-vmahout
  * Upgrades an existing VMahout proxy to the latest implementation.
  *   --proxy <address>   Address of the existing proxy.
+ *   --minter <address>  Address that will receive the MINTER_ROLE (optional).
  */
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
 export const upgradeTask = task("upgrade-vmahout", "Upgrade VMahout token")
   .addParam("proxy", "Existing proxy address", undefined, types.string)
+  .addOptionalParam(
+    "minter",
+    "Address that will receive MINTER_ROLE",
+    undefined,
+    types.string,
+  )
   .setAction(async (taskArgs, hre: HardhatRuntimeEnvironment) => {
-    const { proxy } = taskArgs;
+    const { proxy, minter } = taskArgs;
 
     if (!ethers.isAddress(proxy)) {
       throw new Error(`Invalid proxy address: ${proxy}`);
+    }
+
+    if (minter && !ethers.isAddress(minter)) {
+      throw new Error(`Invalid minter address: ${minter}`);
     }
 
     const [deployer] = await hre.ethers.getSigners();
 
     console.log(`Upgrading VMahout proxy at ${proxy}…`);
     console.log(`  Upgrader (tx sender): ${deployer.address}`);
+    if (minter) {
+      console.log(`  Minter (will receive MINTER_ROLE): ${minter}`);
+    }
 
     const VMahoutFactory = await hre.ethers.getContractFactory("VMahout");
 
@@ -119,6 +133,15 @@ export const upgradeTask = task("upgrade-vmahout", "Upgrade VMahout token")
     console.log(
       `Upgrade complete. Proxy still at: ${await upgraded.getAddress()}`,
     );
+
+    // Grant MINTER_ROLE if minter address provided
+    if (minter) {
+      console.log(`Granting MINTER_ROLE to ${minter}…`);
+      const MINTER_ROLE = await upgraded.MINTER_ROLE();
+      const grantRoleTx = await upgraded.grantRole(MINTER_ROLE, minter);
+      await grantRoleTx.wait();
+      console.log(`MINTER_ROLE granted to ${minter}`);
+    }
 
     // Verify new implementation & (re-)verify proxy on real networks
     if (!["hardhat", "localhost"].includes(hre.network.name)) {

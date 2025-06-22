@@ -52,8 +52,14 @@ Behaviour:
 npx hardhat upgrade-vmahout \
   --proxy 0xProxyAddressHere \
   --network polygon
+
+# Example: upgrade and grant MINTER_ROLE to a new address
+npx hardhat upgrade-vmahout \
+  --proxy 0xProxyAddressHere \
+  --minter 0x1234...dead \
+  --network polygon
 ```
-The task force-imports the proxy into a fresh local manifest (handy on a new environment), performs the upgrade, then re-verifies the new implementation (and the proxy if necessary).
+The task force-imports the proxy into a fresh local manifest (handy on a new environment), performs the upgrade, then re-verifies the new implementation (and the proxy if necessary). If a `--minter` address is provided, the task will also grant the MINTER_ROLE to that address after the upgrade.
 
 ## Helpful Hardhat commands
 ```bash
