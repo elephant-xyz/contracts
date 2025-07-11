@@ -1,4 +1,5 @@
-const { ethers, upgrades } = require("hardhat");
+import { ethers, upgrades } from "hardhat";
+import "@openzeppelin/hardhat-upgrades";
 import { expect } from "chai";
 import "@nomicfoundation/hardhat-chai-matchers";
 import { Signer } from "ethers";

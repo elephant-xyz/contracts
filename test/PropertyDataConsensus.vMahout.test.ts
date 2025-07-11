@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import "@openzeppelin/hardhat-upgrades";
 import { ethers, upgrades } from "hardhat";
 import { VMahout } from "../typechain-types";
 

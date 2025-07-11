@@ -1,4 +1,5 @@
 import { ethers, upgrades } from "hardhat";
+import "@openzeppelin/hardhat-upgrades";
 import { expect } from "chai";
 import type {
   ContractFactory,
