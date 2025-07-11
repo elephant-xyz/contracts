@@ -1,69 +1,43 @@
-# vMahout – Hardhat project
+# vMahout Smart Contracts
 
-This repo contains the upgradeable `VMahout.sol` ERC-20 governance token and the Hardhat workflow to deploy and maintain it.
+This repository contains the smart contracts for the vMahout ecosystem, including the vMahout governance token and PropertyDataConsensus system.
 
-## Prerequisites
-1. Node >= 18
-2. `npm install` (installs Hardhat, OpenZeppelin, etc.)
-3. Environment variables (only required when you deploy to a public network). Create a `.env` and fill in the values you need:
-   ```dotenv
-   # RPC endpoints
-   AMOY_RPC_URL="https://..."
-   POLYGON_MAINNET_RPC_URL="https://..."
+## Smart Contracts
 
-   # Keys / secrets
-   KMS_KEY_ID="..."           # only if you use @rumblefishdev/hardhat-kms-signer
-   ETHERSCAN_API_KEY="..."   # or POLYGONSCAN_API_KEY
-   ```
-   When the RPC variables are undefined Hardhat will ignore those networks, so local development works with no extra config.
+| Contract | Address | Network | Description |
+|----------|---------|---------|-------------|
+| vMahout | [0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18](https://polygonscan.com/address/0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18) | Polygon Mainnet | Non-transferable ERC-20 governance token with minting capabilities |
+| PropertyDataConsensus | [0x525E59e4DE2B51f52B9e30745a513E407652AB7c](https://polygonscan.com/address/0x525E59e4DE2B51f52B9e30745a513E407652AB7c) | Polygon Mainnet | Permissionless consensus system for property data validation |
 
-## Running the tests
-```bash
-npm test          # compiles, then executes contracts + task tests on an in-memory chain
-```
-All unit-tests must pass (including the deploy/upgrade tasks under `test/VMahoutTasks.ts`).
+## Contract Overview
 
-## Local deployment (Hardhat node)
-```bash
-# 1) start a local chain in another terminal
-npx hardhat node
+### vMahout Token (VMahout.sol)
+- **Purpose**: Non-transferable governance token that rewards oracles for participating in consensus
+- **Features**:
+  - ERC-20 compliant with voting capabilities
+  - Non-transferable (transfers are disabled)
+  - Mintable by authorized contracts
+  - Upgradeable via UUPS proxy pattern
+  - Role-based access control
 
-# 2) deploy vMahout to that chain (use one of the default accounts as minter)
-#    The deployer automatically becomes DEFAULT_ADMIN_ROLE & UPGRADER_ROLE
-npx hardhat deploy-vmahout --minter 0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73 --network localhost
-```
-The task prints the proxy address. You can now interact with it or run the upgrade task.
+### PropertyDataConsensus (PropertyDataConsensus.sol)
+- **Purpose**: Decentralized consensus mechanism for validating property data
+- **Features**:
+  - Permissionless oracle participation
+  - Configurable consensus thresholds
+  - Automatic vMahout rewards for consensus participants
+  - Batch data submission support
+  - Comprehensive consensus history tracking
+  - Upgradeable via UUPS proxy pattern
 
-## Deploying to a public network (e.g. Polygon)
-```bash
-# assumes POLYGON_MAINNET_RPC_URL & ETHERSCAN_API_KEY are set
-npx hardhat deploy-vmahout \
-  --minter 0x1234...dead \
-  --network polygon
-```
-Behaviour:
-* Deploys a UUPS proxy
-* The deployer address becomes defaultAdmin & upgrader
-* Verifies both the implementation and the proxy on Polygonscan automatically
+## Integration
 
-## Upgrading an existing proxy
-```bash
-# Example: upgrade on Polygon
-npx hardhat upgrade-vmahout \
-  --proxy 0xProxyAddressHere \
-  --network polygon
+The PropertyDataConsensus contract integrates with the vMahout token to automatically mint rewards (0.016 vMahout tokens) to oracles when they participate in successful consensus rounds.
 
-# Example: upgrade and grant MINTER_ROLE to a new address
-npx hardhat upgrade-vmahout \
-  --proxy 0xProxyAddressHere \
-  --minter 0x1234...dead \
-  --network polygon
-```
-The task force-imports the proxy into a fresh local manifest (handy on a new environment), performs the upgrade, then re-verifies the new implementation (and the proxy if necessary). If a `--minter` address is provided, the task will also grant the MINTER_ROLE to that address after the upgrade.
+## Development
 
-## Helpful Hardhat commands
-```bash
-npx hardhat clean         # wipe artifacts
-npx hardhat compile       # compile only
-npx hardhat help          # list all available tasks (including deploy-vmahout & upgrade-vmahout)
-```
+For development setup, testing, and deployment instructions, please see [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## License
+
+This project is licensed under the MIT License.
