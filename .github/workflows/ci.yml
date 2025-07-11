@@ -73,11 +73,10 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           aws-region: "us-east-1"
 
-      - name: Upgrade
+      - name: Upgrade vMahout
         run: |
           npx hardhat upgrade-vmahout --network polygon --proxy 0x724d3E7e0da94DF12793F7Fbce46388C293C572E --minter 0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18
 
-      # - name: Initial deploy
-      #   run: |
-      #     npx hardhat deploy-vmahout --network polygon --minter 0x8c91861040211f64f76100064321DcF43c2181eF
-
+      - name: Upgrade PropertyDataConsensus
+        run: |
+          npx hardhat upgradeConsensus --network polygon --proxy 0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18

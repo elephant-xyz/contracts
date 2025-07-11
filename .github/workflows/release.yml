@@ -48,7 +48,6 @@ jobs:
         run: |
           npx hardhat upgrade-vmahout --network polygon --proxy 0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18 --minter 0x525E59e4DE2B51f52B9e30745a513E407652AB7c
 
-      # - name: Initial deploy
-      #   run: |
-      #     npx hardhat deploy-vmahout --network polygon --minter 0xD28285598597a5a213AebD116E9A093Ed44b127e
-
+      - name: Upgrade PropertyDataConsensus
+        run: |
+          npx hardhat upgradeConsensus --network polygon --proxy 0x525E59e4DE2B51f52B9e30745a513E407652AB7c
