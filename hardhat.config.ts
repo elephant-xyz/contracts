@@ -4,6 +4,7 @@ import "@nomicfoundation/hardhat-toolbox";
 import "@openzeppelin/hardhat-upgrades";
 import "@rumblefishdev/hardhat-kms-signer";
 import "./tasks/vmahout";
+import "./tasks/consensus";
 
 const DEFAULT_GAS_LIMIT = process.env.GAS_LIMIT
   ? parseInt(process.env.GAS_LIMIT)
