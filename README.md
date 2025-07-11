@@ -4,14 +4,15 @@ This repository contains the smart contracts for the vMahout ecosystem, includin
 
 ## Smart Contracts
 
-| Contract | Address | Network | Description |
-|----------|---------|---------|-------------|
-| vMahout | [0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18](https://polygonscan.com/address/0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18) | Polygon Mainnet | Non-transferable ERC-20 governance token with minting capabilities |
-| PropertyDataConsensus | [0x525E59e4DE2B51f52B9e30745a513E407652AB7c](https://polygonscan.com/address/0x525E59e4DE2B51f52B9e30745a513E407652AB7c) | Polygon Mainnet | Permissionless consensus system for property data validation |
+| Contract              | Address                                                                                                                  | Network         | Description                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------- | ------------------------------------------------------------------ |
+| vMahout               | [0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18](https://polygonscan.com/address/0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18) | Polygon Mainnet | Non-transferable ERC-20 governance token with minting capabilities |
+| PropertyDataConsensus | [0x525E59e4DE2B51f52B9e30745a513E407652AB7c](https://polygonscan.com/address/0x525E59e4DE2B51f52B9e30745a513E407652AB7c) | Polygon Mainnet | Permissionless consensus system for property data validation       |
 
 ## Contract Overview
 
 ### vMahout Token (VMahout.sol)
+
 - **Purpose**: Non-transferable governance token that rewards oracles for participating in consensus
 - **Features**:
   - ERC-20 compliant with voting capabilities
@@ -21,6 +22,7 @@ This repository contains the smart contracts for the vMahout ecosystem, includin
   - Role-based access control
 
 ### PropertyDataConsensus (PropertyDataConsensus.sol)
+
 - **Purpose**: Decentralized consensus mechanism for validating property data
 - **Features**:
   - Permissionless oracle participation
@@ -38,6 +40,3 @@ The PropertyDataConsensus contract integrates with the vMahout token to automati
 
 For development setup, testing, and deployment instructions, please see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-## License
-
-This project is licensed under the MIT License.
