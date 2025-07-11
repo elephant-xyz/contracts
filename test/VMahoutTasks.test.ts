@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import "@openzeppelin/hardhat-upgrades";
 import hre from "hardhat";
 import "@nomicfoundation/hardhat-chai-matchers";
 import { VMahout } from "../typechain-types";
