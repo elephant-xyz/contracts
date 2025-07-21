@@ -1,9 +1,7 @@
 import { task } from "hardhat/config";
 
-// Simple sleep helper
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-// Helper to verify a contract and swallow errors (e.g. already verified)
 async function verifySafe(
   hre: any,
   addr: string,
@@ -68,13 +66,6 @@ task("upgradeConsensus", "Upgrade PropertyDataConsensus contract")
       // Wait a bit to avoid rate limiting
       console.log("Waiting 5 seconds to avoid rate limiting…");
       await sleep(5_000);
-
-      // Attempt proxy verification (will be skipped if already verified)
-      console.log(`Verifying proxy at ${proxy}…`);
-      await verifySafe(hre, proxy, {
-        contract:
-          "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy",
-      });
     }
   });
 

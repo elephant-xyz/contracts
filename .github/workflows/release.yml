@@ -44,10 +44,10 @@ jobs:
       - name: Compile Contracts
         run: npx hardhat compile
 
-      - name: Upgrade
-        run: |
-          npx hardhat upgrade-vmahout --network polygon --proxy 0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18 --minter 0x525E59e4DE2B51f52B9e30745a513E407652AB7c
-
       - name: Upgrade PropertyDataConsensus
         run: |
           npx hardhat upgradeConsensus --network polygon --proxy 0x525E59e4DE2B51f52B9e30745a513E407652AB7c
+
+      - name: Upgrade
+        run: |
+          npx hardhat upgrade-vmahout --network polygon --proxy 0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18 --minter 0x525E59e4DE2B51f52B9e30745a513E407652AB7c
