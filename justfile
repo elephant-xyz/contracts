@@ -78,15 +78,24 @@ build-reference:
         # Build with Hardhat
         npx hardhat compile
         
-        # Copy Hardhat build info to our reference directory
-        # Hardhat stores build info in artifacts/build-info/
-        if [[ -d "artifacts/build-info" ]]; then
+        # Copy entire Hardhat artifacts to our reference directory
+        # This ensures we have all the necessary files for validation
+        if [[ -d "artifacts" ]]; then
             mkdir -p previous-builds
+            mkdir -p previous-builds/artifacts-v1
             mkdir -p previous-builds/build-info-v1
-            cp -r artifacts/build-info/* previous-builds/build-info-v1/
-            echo "Copied Hardhat build info to reference directory"
+            
+            # Copy entire artifacts directory
+            cp -r artifacts/* previous-builds/artifacts-v1/
+            
+            # Also copy just the build-info for compatibility
+            if [[ -d "artifacts" ]]; then
+                cp -r artifacts/* previous-builds/build-info-v1/
+            fi
+            
+            echo "Copied Hardhat artifacts to reference directory"
         else
-            echo "Warning: No Hardhat build info found"
+            echo "Warning: No Hardhat artifacts found"
         fi
     else
         echo "Warning: No build system found in reference commit. Skipping reference build."
