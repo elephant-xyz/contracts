@@ -22,13 +22,14 @@
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.9",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@openzeppelin/hardhat-upgrades": "^3.9.0",
-    "hardhat": "^2.24.3",
+    "hardhat": "^2.26.1",
     "prettier": "^3.5.3",
     "prettier-plugin-solidity": "^2.0.0",
     "solhint": "^5.1.0",
     "ts-node": "^10.9.2"
   },
   "dependencies": {
+    "@nomicfoundation/hardhat-verify": "^2.1.0",
     "@openzeppelin/contracts": "^5.3.0",
     "@openzeppelin/contracts-upgradeable": "^5.3.0",
     "@rumblefishdev/hardhat-kms-signer": "^2.0.0"
