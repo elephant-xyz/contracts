@@ -81,6 +81,8 @@ build-reference:
         # Copy Hardhat build info to our reference directory
         # Hardhat stores build info in artifacts/build-info/
         if [[ -d "artifacts/build-info" ]]; then
+            mkdir -p previous-builds
+            mkdir -p previous-builds/build-info-v1
             cp -r artifacts/build-info/* previous-builds/build-info-v1/
             echo "Copied Hardhat build info to reference directory"
         else
