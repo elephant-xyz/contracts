@@ -86,7 +86,7 @@ build-reference:
             mkdir -p previous-builds/build-info-v1
             
             # Copy entire artifacts directory
-            cp -r artifacts/* previous-builds/
+            cp -r artifacts/build-info previous-builds/build-info-v1
             
             echo "Copied Hardhat artifacts to reference directory"
         else
