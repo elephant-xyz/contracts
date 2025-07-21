@@ -50,7 +50,6 @@ build-reference:
     else
         echo "On feature branch, using main branch as reference..."
         REFERENCE_COMMIT=$(git rev-parse origin/main 2>/dev/null || echo "")
-        CURRENT_COMMIT = $CURRENT_BRANCH
         
         if [[ -z "$REFERENCE_COMMIT" ]]; then
             echo "Warning: No main branch found. Skipping reference build."
