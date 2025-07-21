@@ -57,9 +57,13 @@ jobs:
         run: |
           SKIP_VALIDATION=true forge script script/UpgradeConsensus.s.sol \
             --rpc-url $POLYGON_MAINNET_RPC_URL \
+            --broadcast \
+            --verify \
+            --etherscan-api-key $POLYGONSCAN_API_KEY \
             --aws \
-            --sender $(cast wallet address --aws) \
-            --slow
+            --sender $KMS_ADDRESS \
+            --slow \
+            -vvvv
         env:
           CONSENSUS_PROXY: "0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18"
 
