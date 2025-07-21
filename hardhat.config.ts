@@ -21,8 +21,8 @@ const config: HardhatUserConfig = {
         runs: 200,
       },
       outputSelection: {
-        '*': {
-          '*': ['storageLayout'],
+        "*": {
+          "*": ["storageLayout"],
         },
       },
     },
