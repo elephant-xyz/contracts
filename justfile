@@ -50,6 +50,7 @@ build-reference:
     else
         echo "On feature branch, using main branch as reference..."
         REFERENCE_COMMIT=$(git rev-parse origin/main 2>/dev/null || echo "")
+        CURRENT_COMMIT = $CURRENT_BRANCH
         
         if [[ -z "$REFERENCE_COMMIT" ]]; then
             echo "Warning: No main branch found. Skipping reference build."
@@ -86,12 +87,7 @@ build-reference:
             mkdir -p previous-builds/build-info-v1
             
             # Copy entire artifacts directory
-            cp -r artifacts/* previous-builds/artifacts-v1/
-            
-            # Also copy just the build-info for compatibility
-            if [[ -d "artifacts" ]]; then
-                cp -r artifacts/* previous-builds/build-info-v1/
-            fi
+            cp -r artifacts/* previous-builds/
             
             echo "Copied Hardhat artifacts to reference directory"
         else
