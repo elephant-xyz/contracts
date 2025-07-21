@@ -53,6 +53,10 @@ jobs:
       - name: Run Forge fmt check
         run: forge fmt --check
 
+      - name: Get KMS Address
+        run: |
+          echo "KMS_ADDRESS=$(cast wallet address --aws)" >> $GITHUB_ENV
+
       - name: Upgrade PropertyDataConsensus (Dry Run)
         run: |
           SKIP_VALIDATION=true forge script script/UpgradeConsensus.s.sol \
