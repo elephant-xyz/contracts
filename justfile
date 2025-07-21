@@ -35,7 +35,7 @@ build-reference:
     fi
     
     # Create reference build directory
-    mkdir -p previous-builds/build-info-v1
+    mkdir -p previous-builds/foundry-v1
     
     # Determine reference commit
     if [[ "$CURRENT_BRANCH" == "main" ]]; then
@@ -65,7 +65,7 @@ build-reference:
     # Check if reference commit has Foundry or Hardhat setup
     if [[ -f "foundry.toml" ]]; then
         echo "Reference commit has Foundry setup, building with Forge..."
-        forge build --build-info --build-info-path previous-builds/build-info-v1
+        forge build --build-info --build-info-path previous-builds/foundry-v1
     elif [[ -f "hardhat.config.ts" ]] || [[ -f "hardhat.config.js" ]]; then
         echo "Reference commit has Hardhat setup, building with Hardhat..."
         
