@@ -62,44 +62,7 @@ The PropertyDataConsensus contract integrates with the vMahout token to automati
 
 ### Granting LEXICON_ORACLE_MANAGER_ROLE
 
-The LEXICON_ORACLE_MANAGER_ROLE can be granted through GitHub Actions workflows. We provide two secure approaches:
-
-#### Option 1: Branch Protection (grant-roles.yml)
-
-This workflow uses branch protection to ensure only authorized users can execute it:
-
-1. Navigate to the Actions tab in the repository
-2. Select "Grant Roles" workflow
-3. Click "Run workflow"
-4. Fill in the required parameters:
-   - Network: polygon or amoy
-   - Proxy address: PropertyDataConsensus contract address
-   - Recipient: Address to receive the role
-
-**Security**: This workflow only runs from the main branch, which requires write access to modify.
-
-#### Option 2: Environment Protection (grant-roles-secure.yml)
-
-This workflow uses GitHub environments for enhanced security:
-
-1. Set up a "production" environment in your repository settings
-2. Configure environment protection rules:
-   - Add required reviewers
-   - Restrict to specific users or teams
-3. Run the "Grant Roles (Secure)" workflow
-
-**Security**: Only users with access to the production environment can execute this workflow.
-
-### Setting Up Environment Protection
-
-To use the secure workflow:
-
-1. Go to Settings → Environments
-2. Create a "production" environment
-3. Configure protection rules:
-   - Required reviewers: Add specific maintainers
-   - Deployment branches: Restrict to main branch
-   - Environment secrets: Add any environment-specific secrets
+The LEXICON_ORACLE_MANAGER_ROLE can be granted through GitHub Actions workflows.
 
 ## Development
 
