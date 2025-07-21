@@ -13,12 +13,14 @@ describe("PropertyDataConsensus", function () {
   let oracle1: SignerWithAddress;
   let oracle2: SignerWithAddress;
   let oracle3: SignerWithAddress;
+  let oracle4: SignerWithAddress;
 
   let adminAddress: string;
   let unprivilegedUserAddress: string;
   let oracle1Address: string;
   let oracle2Address: string;
   let oracle3Address: string;
+  let oracle4Address: string;
 
   let DEFAULT_ADMIN_ROLE: string;
   let PropertyDataConsensusFactory: ContractFactory;
@@ -44,6 +46,7 @@ describe("PropertyDataConsensus", function () {
       oracle1Signer,
       oracle2Signer,
       oracle3Signer,
+      oracle4Signer,
     ] = await ethers.getSigners();
 
     const factory = await ethers.getContractFactory(
@@ -68,6 +71,7 @@ describe("PropertyDataConsensus", function () {
       oracle1Signer,
       oracle2Signer,
       oracle3Signer,
+      oracle4Signer,
       adminRole,
       factory,
     };
@@ -81,6 +85,7 @@ describe("PropertyDataConsensus", function () {
       oracle1Signer,
       oracle2Signer,
       oracle3Signer,
+      oracle4Signer,
       adminRole,
       factory,
     } = await loadFixture(deployPropertyDataConsensusFixture);
@@ -91,12 +96,14 @@ describe("PropertyDataConsensus", function () {
     oracle1 = oracle1Signer;
     oracle2 = oracle2Signer;
     oracle3 = oracle3Signer;
+    oracle4 = oracle4Signer;
 
     adminAddress = await admin.getAddress();
     unprivilegedUserAddress = await unprivilegedUser.getAddress();
     oracle1Address = await oracle1.getAddress();
     oracle2Address = await oracle2.getAddress();
     oracle3Address = await oracle3.getAddress();
+    oracle4Address = await oracle4.getAddress();
 
     DEFAULT_ADMIN_ROLE = adminRole;
     PropertyDataConsensusFactory = factory;
@@ -480,11 +487,13 @@ describe("PropertyDataConsensus", function () {
           propertyDataConsensus
             .connect(admin)
             .setConsensusRequired(dataGroupHash1, 5),
-        ).to.not.be.reverted;
+        )
+          .to.emit(propertyDataConsensus, "DataGroupConsensusUpdated")
+          .withArgs(dataGroupHash1, 0, 5);
 
         // Verify the threshold was set
         expect(
-          await propertyDataConsensus._consensusRequired(dataGroupHash1),
+          await propertyDataConsensus.consensusRequired(dataGroupHash1),
         ).to.equal(5);
       });
 
@@ -503,6 +512,27 @@ describe("PropertyDataConsensus", function () {
           PropertyDataConsensusFactory,
           "InvalidMinimumConsensus",
         );
+      });
+
+      it("Should emit event when updating existing consensus threshold", async function () {
+        // Grant role to admin
+        await propertyDataConsensus
+          .connect(admin)
+          .grantRole(LEXICON_ORACLE_MANAGER_ROLE, adminAddress);
+
+        // Set initial threshold
+        await propertyDataConsensus
+          .connect(admin)
+          .setConsensusRequired(dataGroupHash1, 5);
+
+        // Update threshold
+        await expect(
+          propertyDataConsensus
+            .connect(admin)
+            .setConsensusRequired(dataGroupHash1, 7),
+        )
+          .to.emit(propertyDataConsensus, "DataGroupConsensusUpdated")
+          .withArgs(dataGroupHash1, 5, 7);
       });
 
       it("Should prevent non-LEXICON_ORACLE_MANAGER_ROLE from setting consensus", async function () {
@@ -561,9 +591,7 @@ describe("PropertyDataConsensus", function () {
           ethers.toUtf8Bytes("property-789-main-data"),
         );
 
-        // Add a fourth oracle
-        const [, , , , , oracle4] = await ethers.getSigners();
-        const oracle4Address = await oracle4.getAddress();
+        // oracle4 and oracle4Address are already available from the fixture
 
         await propertyDataConsensus
           .connect(oracle1)

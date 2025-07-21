@@ -29,6 +29,7 @@ interface IPropertyDataConsensus {
         address[] newOracles
     );
     event MinimumConsensusUpdated(uint256 oldValue, uint256 newValue);
+    event DataGroupConsensusUpdated(bytes32 indexed dataGroupHash, uint256 oldValue, uint256 newValue);
 
     // --- Structs ---
     struct DataVersion {
@@ -114,7 +115,7 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
     mapping(bytes32 => bytes32) private _currentConsensusDataHash;
     mapping(bytes32 => IPropertyDataConsensus.DataVersion[]) private _consensusLog;
     IERC20Mintable public vMahout;
-    mapping(bytes32 => uint256) public _consensusRequired;
+    mapping(bytes32 => uint256) public consensusRequired;
     bytes32 public constant LEXICON_ORACLE_MANAGER_ROLE = keccak256("LEXICON_ORACLE_MANAGER_ROLE");
 
     // Custom Errors
@@ -183,10 +184,7 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
         EnumerableSet.AddressSet storage submittersForDataHash = _submissionData[propertyHashFieldHash][dataHash];
         submittersForDataHash.add(submitter);
         emit DataSubmitted(propertyHash, dataGroupHash, submitter, dataHash);
-        uint256 requiredConsensus = _consensusRequired[dataGroupHash];
-        if (requiredConsensus == 0) {
-            requiredConsensus = minimumConsensus;
-        }
+        uint256 requiredConsensus = _getConsensusRequired(dataGroupHash);
         if (submittersForDataHash.length() >= requiredConsensus) {
             address[] memory oracles = submittersForDataHash.values();
             IPropertyDataConsensus.DataVersion memory newVersion = IPropertyDataConsensus.DataVersion({
@@ -279,7 +277,20 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
         if (requiredConsensus < 3) {
             revert InvalidMinimumConsensus(requiredConsensus);
         }
-        _consensusRequired[dataGroupHash] = requiredConsensus;
+        uint256 oldValue = consensusRequired[dataGroupHash];
+        consensusRequired[dataGroupHash] = requiredConsensus;
+        emit DataGroupConsensusUpdated(dataGroupHash, oldValue, requiredConsensus);
+    }
+
+    /**
+     * @notice Gets the consensus threshold for a specific data group
+     * @dev Returns the custom threshold if set, otherwise returns the global minimum consensus
+     * @param dataGroupHash The hash of the data group
+     * @return The required consensus threshold
+     */
+    function _getConsensusRequired(bytes32 dataGroupHash) internal view returns (uint256) {
+        uint256 required = consensusRequired[dataGroupHash];
+        return required == 0 ? minimumConsensus : required;
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
