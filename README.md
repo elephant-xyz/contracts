@@ -62,17 +62,7 @@ The PropertyDataConsensus contract integrates with the vMahout token to automati
 
 ### Granting LEXICON_ORACLE_MANAGER_ROLE
 
-The LEXICON_ORACLE_MANAGER_ROLE can be granted through a GitHub Actions workflow:
-
-1. Navigate to the Actions tab in the repository
-2. Select "Grant Roles" workflow
-3. Click "Run workflow"
-4. Fill in the required parameters:
-   - Network: polygon or amoy
-   - Proxy address: PropertyDataConsensus contract address
-   - Recipient: Address to receive the role
-
-**Note**: This workflow can only be executed by organization administrators for security reasons.
+The LEXICON_ORACLE_MANAGER_ROLE can be granted through GitHub Actions workflows.
 
 ## Development
 
