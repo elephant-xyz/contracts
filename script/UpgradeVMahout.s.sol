@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { Script, console } from "forge-std/Script.sol";
-import { Upgrades } from "@openzeppelin-upgrades/Upgrades.sol";
+import { Upgrades, Options } from "@openzeppelin-upgrades/Upgrades.sol";
 import { VMahout } from "../src/VMahout.sol";
 
 contract UpgradeVMahoutScript is Script {
@@ -12,8 +12,12 @@ contract UpgradeVMahoutScript is Script {
 
         vm.startBroadcast();
 
+        // Set up options with reference contract
+        Options memory opts;
+        opts.referenceContract = "VMahout.sol:VMahout";
+
         // Upgrade the proxy to new implementation
-        Upgrades.upgradeProxy(proxyAddress, "VMahout.sol", "");
+        Upgrades.upgradeProxy(proxyAddress, "VMahout.sol", "", opts);
 
         // Grant MINTER_ROLE if minter address provided
         if (minter != address(0)) {
