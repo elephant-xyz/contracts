@@ -1,5 +1,23 @@
 import { task } from "hardhat/config";
 
+// Simple sleep helper
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+// Helper to verify a contract and swallow errors (e.g. already verified)
+async function verifySafe(
+  hre: any,
+  addr: string,
+  extra: Record<string, any> = {},
+) {
+  try {
+    await hre.run("verify:verify", { address: addr, ...extra });
+  } catch (err: any) {
+    console.warn(
+      `Verification skipped/failed for ${addr}: ${err.message ?? err}`,
+    );
+  }
+}
+
 task("upgradeConsensus", "Upgrade PropertyDataConsensus contract")
   .addParam("proxy", "The proxy address to upgrade")
   .addOptionalParam(
@@ -8,10 +26,10 @@ task("upgradeConsensus", "Upgrade PropertyDataConsensus contract")
   )
   .addOptionalParam("vmahout", "Address of vMahout token to set after upgrade")
   .setAction(async (taskArgs, hre) => {
-    const { proxy } = taskArgs;
+    const { proxy, vmahout } = taskArgs;
     const [deployer] = await hre.ethers.getSigners();
 
-    console.log(`Upgrading VMahout proxy at ${proxy}…`);
+    console.log(`Upgrading PropertyDataConsensus proxy at ${proxy}…`);
     console.log(`  Upgrader (tx sender): ${deployer.address}`);
 
     const ConsensusFactory = await hre.ethers.getContractFactory(
@@ -22,6 +40,37 @@ task("upgradeConsensus", "Upgrade PropertyDataConsensus contract")
 
     const upgraded = await hre.upgrades.upgradeProxy(proxy, ConsensusFactory);
     await upgraded.waitForDeployment();
+
+    console.log(
+      `Upgrade complete. Proxy still at: ${await upgraded.getAddress()}`,
+    );
+
+    // Set vMahout address if provided
+    if (vmahout) {
+      console.log(`Setting vMahout address to ${vmahout}…`);
+      const setVMahoutTx = await upgraded.setVMahout(vmahout);
+      await setVMahoutTx.wait();
+      console.log(`vMahout address set to ${vmahout}`);
+    }
+
+    // Verify new implementation on real networks
+    if (!["hardhat", "localhost"].includes(hre.network.name)) {
+      console.log(
+        "Waiting 90 seconds before verification so explorer can index the upgrade…",
+      );
+      await sleep(90_000);
+
+      const implAddress =
+        await hre.upgrades.erc1967.getImplementationAddress(proxy);
+      console.log(`Verifying new implementation at ${implAddress}…`);
+      await verifySafe(hre, implAddress);
+
+      // Attempt proxy verification again (will be skipped if already verified)
+      await verifySafe(hre, proxy, {
+        contract:
+          "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy",
+      });
+    }
   });
 
 task(
