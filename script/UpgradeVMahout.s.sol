@@ -12,9 +12,10 @@ contract UpgradeVMahoutScript is Script {
 
         vm.startBroadcast();
 
-        // Set up options with reference contract
+        // Set up options with reference to previous build
         Options memory opts;
-        opts.referenceContract = "VMahout.sol:VMahout";
+        opts.referenceBuildInfoDir = "previous-builds/build-info-v1";
+        opts.referenceContract = "build-info-v1:VMahout.sol:VMahout";
 
         // Upgrade the proxy to new implementation
         Upgrades.upgradeProxy(proxyAddress, "VMahout.sol", "", opts);

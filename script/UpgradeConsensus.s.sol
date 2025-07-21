@@ -11,9 +11,10 @@ contract UpgradeConsensusScript is Script {
 
         vm.startBroadcast();
 
-        // Set up options with reference contract
+        // Set up options with reference to previous build
         Options memory opts;
-        opts.referenceContract = "PropertyDataConsensus.sol:PropertyDataConsensus";
+        opts.referenceBuildInfoDir = "previous-builds/build-info-v1";
+        opts.referenceContract = "build-info-v1:PropertyDataConsensus.sol:PropertyDataConsensus";
 
         // Upgrade the proxy to new implementation
         Upgrades.upgradeProxy(proxyAddress, "PropertyDataConsensus.sol", "", opts);
