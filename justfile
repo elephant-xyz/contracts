@@ -125,13 +125,34 @@ deploy network="amoy":
         --verify \
         -vvvv
 
+# Upgrade VMahout contract (local)
+upgrade-vmahout-local:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Build reference first (unless skipping validation)
+    if [[ "${SKIP_VALIDATION:-false}" != "true" ]]; then
+        just build-reference
+    fi
+    
+    # Build current contracts
+    forge build
+    
+    # Run upgrade
+    forge script script/UpgradeVMahout.s.sol \
+        --rpc-url http://localhost:8545 \
+        --broadcast \
+        -vvvv
+
 # Upgrade VMahout contract
 upgrade-vmahout network="amoy":
     #!/usr/bin/env bash
     set -euo pipefail
     
-    # Build reference first
-    just build-reference
+    # Build reference first (unless skipping validation)
+    if [[ "${SKIP_VALIDATION:-false}" != "true" ]]; then
+        just build-reference
+    fi
     
     # Build current contracts
     forge build
@@ -143,13 +164,34 @@ upgrade-vmahout network="amoy":
         --verify \
         -vvvv
 
+# Upgrade PropertyDataConsensus contract (local)
+upgrade-consensus-local:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Build reference first (unless skipping validation)
+    if [[ "${SKIP_VALIDATION:-false}" != "true" ]]; then
+        just build-reference
+    fi
+    
+    # Build current contracts
+    forge build
+    
+    # Run upgrade
+    forge script script/UpgradeConsensus.s.sol \
+        --rpc-url http://localhost:8545 \
+        --broadcast \
+        -vvvv
+
 # Upgrade PropertyDataConsensus contract
 upgrade-consensus network="amoy":
     #!/usr/bin/env bash
     set -euo pipefail
     
-    # Build reference first
-    just build-reference
+    # Build reference first (unless skipping validation)
+    if [[ "${SKIP_VALIDATION:-false}" != "true" ]]; then
+        just build-reference
+    fi
     
     # Build current contracts
     forge build

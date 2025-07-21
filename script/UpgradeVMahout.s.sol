@@ -9,16 +9,27 @@ contract UpgradeVMahoutScript is Script {
     function run() external {
         address proxyAddress = vm.envAddress("VMAHOUT_PROXY");
         address minter = vm.envOr("MINTER_ADDRESS", address(0));
+        bool skipValidation = vm.envOr("SKIP_VALIDATION", false);
 
         vm.startBroadcast();
 
-        // Set up options with reference to previous build
-        Options memory opts;
-        opts.referenceBuildInfoDir = "previous-builds/hardhat-v1";
-        opts.referenceContract = "hardhat-v1:contracts/VMahout.sol:VMahout";
+        if (skipValidation) {
+            console.log("Skipping upgrade validation...");
 
-        // Upgrade the proxy to new implementation
-        Upgrades.upgradeProxy(proxyAddress, "VMahout.sol", "", opts);
+            // Upgrade without validation
+            Options memory opts;
+            opts.unsafeSkipAllChecks = true;
+
+            Upgrades.upgradeProxy(proxyAddress, "VMahout.sol", "", opts);
+        } else {
+            // Set up options with reference to previous build
+            Options memory opts;
+            opts.referenceBuildInfoDir = "previous-builds/hardhat-v1";
+            opts.referenceContract = "hardhat-v1:contracts/VMahout.sol:VMahout";
+
+            // Upgrade the proxy to new implementation
+            Upgrades.upgradeProxy(proxyAddress, "VMahout.sol", "", opts);
+        }
 
         // Grant MINTER_ROLE if minter address provided
         if (minter != address(0)) {

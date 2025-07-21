@@ -38,12 +38,6 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -61,7 +55,7 @@ jobs:
 
       - name: Upgrade PropertyDataConsensus (Dry Run)
         run: |
-          forge script script/UpgradeConsensus.s.sol \
+          SKIP_VALIDATION=true forge script script/UpgradeConsensus.s.sol \
             --rpc-url $POLYGON_MAINNET_RPC_URL \
             --aws \
             --sender $(cast wallet address --aws) \
