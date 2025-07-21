@@ -497,23 +497,6 @@ describe("PropertyDataConsensus", function () {
         ).to.equal(5);
       });
 
-      it("Should revert if consensus threshold is less than 3", async function () {
-        // Grant role to admin
-        await propertyDataConsensus
-          .connect(admin)
-          .grantRole(LEXICON_ORACLE_MANAGER_ROLE, adminAddress);
-
-        // Try to set invalid threshold
-        await expect(
-          propertyDataConsensus
-            .connect(admin)
-            .setConsensusRequired(dataGroupHash1, 2),
-        ).to.be.revertedWithCustomError(
-          PropertyDataConsensusFactory,
-          "InvalidMinimumConsensus",
-        );
-      });
-
       it("Should emit event when updating existing consensus threshold", async function () {
         // Grant role to admin
         await propertyDataConsensus

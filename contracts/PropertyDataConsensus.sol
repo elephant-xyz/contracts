@@ -274,9 +274,6 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
         bytes32 dataGroupHash,
         uint256 requiredConsensus
     ) external onlyRole(LEXICON_ORACLE_MANAGER_ROLE) {
-        if (requiredConsensus < 3) {
-            revert InvalidMinimumConsensus(requiredConsensus);
-        }
         uint256 oldValue = consensusRequired[dataGroupHash];
         consensusRequired[dataGroupHash] = requiredConsensus;
         emit DataGroupConsensusUpdated(dataGroupHash, oldValue, requiredConsensus);
