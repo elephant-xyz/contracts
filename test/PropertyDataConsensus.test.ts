@@ -1,17 +1,9 @@
 import { ethers, upgrades } from "hardhat";
 import "@openzeppelin/hardhat-upgrades";
 import { expect } from "chai";
-import type {
-  ContractFactory,
-  Signer as EthersSigner,
-  AbiCoder,
-  BytesLike,
-} from "ethers";
+import type { ContractFactory, Signer as EthersSigner } from "ethers";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import {
-  PropertyDataConsensus,
-  IPropertyDataConsensus,
-} from "../typechain-types";
+import { PropertyDataConsensus } from "../typechain-types";
 import type { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("PropertyDataConsensus", function () {
@@ -465,6 +457,188 @@ describe("PropertyDataConsensus", function () {
           "AccessControlUnauthorizedAccount",
         )
         .withArgs(unprivilegedUserAddress, DEFAULT_ADMIN_ROLE);
+    });
+  });
+
+  describe("Configurable Consensus Threshold", function () {
+    let LEXICON_ORACLE_MANAGER_ROLE: string;
+
+    beforeEach(async function () {
+      LEXICON_ORACLE_MANAGER_ROLE =
+        await propertyDataConsensus.LEXICON_ORACLE_MANAGER_ROLE();
+    });
+
+    describe("setConsensusRequired", function () {
+      it("Should allow LEXICON_ORACLE_MANAGER_ROLE to set consensus threshold", async function () {
+        // Grant role to admin
+        await propertyDataConsensus
+          .connect(admin)
+          .grantRole(LEXICON_ORACLE_MANAGER_ROLE, adminAddress);
+
+        // Set custom consensus threshold
+        await expect(
+          propertyDataConsensus
+            .connect(admin)
+            .setConsensusRequired(dataGroupHash1, 5),
+        ).to.not.be.reverted;
+
+        // Verify the threshold was set
+        expect(
+          await propertyDataConsensus._consensusRequired(dataGroupHash1),
+        ).to.equal(5);
+      });
+
+      it("Should revert if consensus threshold is less than 3", async function () {
+        // Grant role to admin
+        await propertyDataConsensus
+          .connect(admin)
+          .grantRole(LEXICON_ORACLE_MANAGER_ROLE, adminAddress);
+
+        // Try to set invalid threshold
+        await expect(
+          propertyDataConsensus
+            .connect(admin)
+            .setConsensusRequired(dataGroupHash1, 2),
+        ).to.be.revertedWithCustomError(
+          PropertyDataConsensusFactory,
+          "InvalidMinimumConsensus",
+        );
+      });
+
+      it("Should prevent non-LEXICON_ORACLE_MANAGER_ROLE from setting consensus", async function () {
+        await expect(
+          propertyDataConsensus
+            .connect(unprivilegedUser)
+            .setConsensusRequired(dataGroupHash1, 5),
+        )
+          .to.be.revertedWithCustomError(
+            PropertyDataConsensusFactory,
+            "AccessControlUnauthorizedAccount",
+          )
+          .withArgs(unprivilegedUserAddress, LEXICON_ORACLE_MANAGER_ROLE);
+      });
+    });
+
+    describe("submitData with custom consensus threshold", function () {
+      beforeEach(async function () {
+        // Grant role and set custom threshold
+        await propertyDataConsensus
+          .connect(admin)
+          .grantRole(LEXICON_ORACLE_MANAGER_ROLE, adminAddress);
+        await propertyDataConsensus
+          .connect(admin)
+          .setConsensusRequired(dataGroupHash1, 4);
+      });
+
+      it("Should not reach consensus with 3 submissions when threshold is 4", async function () {
+        // Use a fresh property hash to avoid conflicts with previous tests
+        const propertyHash2 = ethers.sha256(
+          ethers.toUtf8Bytes("property-456-main-data"),
+        );
+
+        await propertyDataConsensus
+          .connect(oracle1)
+          .submitData(propertyHash2, dataGroupHash1, dataHash1);
+        await propertyDataConsensus
+          .connect(oracle2)
+          .submitData(propertyHash2, dataGroupHash1, dataHash1);
+        await propertyDataConsensus
+          .connect(oracle3)
+          .submitData(propertyHash2, dataGroupHash1, dataHash1);
+
+        // Should not have reached consensus yet
+        expect(
+          await propertyDataConsensus.getCurrentFieldDataHash(
+            propertyHash2,
+            dataGroupHash1,
+          ),
+        ).to.equal(ethers.ZeroHash);
+      });
+
+      it("Should reach consensus with 4 submissions when threshold is 4", async function () {
+        // Use a fresh property hash to avoid conflicts
+        const propertyHash3 = ethers.sha256(
+          ethers.toUtf8Bytes("property-789-main-data"),
+        );
+
+        // Add a fourth oracle
+        const [, , , , , oracle4] = await ethers.getSigners();
+        const oracle4Address = await oracle4.getAddress();
+
+        await propertyDataConsensus
+          .connect(oracle1)
+          .submitData(propertyHash3, dataGroupHash1, dataHash1);
+        await propertyDataConsensus
+          .connect(oracle2)
+          .submitData(propertyHash3, dataGroupHash1, dataHash1);
+        await propertyDataConsensus
+          .connect(oracle3)
+          .submitData(propertyHash3, dataGroupHash1, dataHash1);
+
+        // Fourth submission should trigger consensus
+        await expect(
+          propertyDataConsensus
+            .connect(oracle4)
+            .submitData(propertyHash3, dataGroupHash1, dataHash1),
+        )
+          .to.emit(propertyDataConsensus, "ConsensusReached")
+          .withArgs(
+            propertyHash3,
+            dataGroupHash1,
+            dataHash1,
+            (emittedOracles: string[]) => {
+              expect([...emittedOracles]).to.have.members([
+                oracle1Address,
+                oracle2Address,
+                oracle3Address,
+                oracle4Address,
+              ]);
+              return true;
+            },
+          );
+
+        expect(
+          await propertyDataConsensus.getCurrentFieldDataHash(
+            propertyHash3,
+            dataGroupHash1,
+          ),
+        ).to.equal(dataHash1);
+      });
+
+      it("Should use default consensus for data groups without custom threshold", async function () {
+        const dataGroupHash2 = ethers.sha256(
+          ethers.toUtf8Bytes("property-details-group"),
+        );
+
+        // Submit data for a different data group (no custom threshold)
+        await propertyDataConsensus
+          .connect(oracle1)
+          .submitData(propertyHash1, dataGroupHash2, dataHash1);
+        await propertyDataConsensus
+          .connect(oracle2)
+          .submitData(propertyHash1, dataGroupHash2, dataHash1);
+
+        // Third submission should reach consensus (default is 3)
+        await expect(
+          propertyDataConsensus
+            .connect(oracle3)
+            .submitData(propertyHash1, dataGroupHash2, dataHash1),
+        )
+          .to.emit(propertyDataConsensus, "ConsensusReached")
+          .withArgs(
+            propertyHash1,
+            dataGroupHash2,
+            dataHash1,
+            (emittedOracles: string[]) => {
+              expect([...emittedOracles]).to.have.members([
+                oracle1Address,
+                oracle2Address,
+                oracle3Address,
+              ]);
+              return true;
+            },
+          );
+      });
     });
   });
 });

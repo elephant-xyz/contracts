@@ -114,6 +114,8 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
     mapping(bytes32 => bytes32) private _currentConsensusDataHash;
     mapping(bytes32 => IPropertyDataConsensus.DataVersion[]) private _consensusLog;
     IERC20Mintable public vMahout;
+    mapping(bytes32 => uint256) public _consensusRequired;
+    bytes32 public constant LEXICON_ORACLE_MANAGER_ROLE = keccak256("LEXICON_ORACLE_MANAGER_ROLE");
 
     // Custom Errors
     error AlreadySubmittedThisDataHash(address submitter, bytes32 propertyHashFieldHash, bytes32 dataHash);
@@ -181,7 +183,11 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
         EnumerableSet.AddressSet storage submittersForDataHash = _submissionData[propertyHashFieldHash][dataHash];
         submittersForDataHash.add(submitter);
         emit DataSubmitted(propertyHash, dataGroupHash, submitter, dataHash);
-        if (submittersForDataHash.length() >= minimumConsensus) {
+        uint256 requiredConsensus = _consensusRequired[dataGroupHash];
+        if (requiredConsensus == 0) {
+            requiredConsensus = minimumConsensus;
+        }
+        if (submittersForDataHash.length() >= requiredConsensus) {
             address[] memory oracles = submittersForDataHash.values();
             IPropertyDataConsensus.DataVersion memory newVersion = IPropertyDataConsensus.DataVersion({
                 dataHash: dataHash,
@@ -264,6 +270,16 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
     ) public view override returns (bool) {
         bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(propertyHash, dataGroupHash);
         return _submissionData[propertyHashFieldHash][dataHash].contains(submitter);
+    }
+
+    function setConsensusRequired(
+        bytes32 dataGroupHash,
+        uint256 requiredConsensus
+    ) external onlyRole(LEXICON_ORACLE_MANAGER_ROLE) {
+        if (requiredConsensus < 3) {
+            revert InvalidMinimumConsensus(requiredConsensus);
+        }
+        _consensusRequired[dataGroupHash] = requiredConsensus;
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
