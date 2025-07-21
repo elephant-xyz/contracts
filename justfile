@@ -40,10 +40,21 @@ build-reference:
     # Determine reference commit
     if [[ "$CURRENT_BRANCH" == "main" ]]; then
         echo "On main branch, using previous commit as reference..."
-        REFERENCE_COMMIT=$(git rev-parse HEAD~1)
+        REFERENCE_COMMIT=$(git rev-parse HEAD~1 2>/dev/null || echo "")
+        
+        if [[ -z "$REFERENCE_COMMIT" ]]; then
+            echo "Warning: No previous commit found. Skipping reference build."
+            echo "This is expected for the first deployment."
+            exit 0
+        fi
     else
         echo "On feature branch, using main branch as reference..."
-        REFERENCE_COMMIT=$(git rev-parse origin/main)
+        REFERENCE_COMMIT=$(git rev-parse origin/main 2>/dev/null || echo "")
+        
+        if [[ -z "$REFERENCE_COMMIT" ]]; then
+            echo "Warning: No main branch found. Skipping reference build."
+            exit 0
+        fi
     fi
     
     echo "Reference commit: $REFERENCE_COMMIT"
@@ -51,13 +62,44 @@ build-reference:
     # Checkout reference commit
     git checkout $REFERENCE_COMMIT
     
-    # Build reference contracts
-    forge build --build-info --build-info-path previous-builds/build-info-v1
+    # Check if reference commit has Foundry or Hardhat setup
+    if [[ -f "foundry.toml" ]]; then
+        echo "Reference commit has Foundry setup, building with Forge..."
+        forge build --build-info --build-info-path previous-builds/build-info-v1
+    elif [[ -f "hardhat.config.ts" ]] || [[ -f "hardhat.config.js" ]]; then
+        echo "Reference commit has Hardhat setup, building with Hardhat..."
+        
+        # Install dependencies if needed
+        if [[ ! -d "node_modules" ]]; then
+            echo "Installing dependencies..."
+            npm install
+        fi
+        
+        # Build with Hardhat
+        npx hardhat compile
+        
+        # Copy Hardhat build info to our reference directory
+        # Hardhat stores build info in artifacts/build-info/
+        if [[ -d "artifacts/build-info" ]]; then
+            cp -r artifacts/build-info/* previous-builds/build-info-v1/
+            echo "Copied Hardhat build info to reference directory"
+        else
+            echo "Warning: No Hardhat build info found"
+        fi
+    else
+        echo "Warning: No build system found in reference commit. Skipping reference build."
+    fi
     
     # Return to original state
     git checkout $CURRENT_COMMIT
     
-    echo "Reference contracts built successfully!"
+    # Restore node_modules if they were removed by checkout
+    if [[ -f "package.json" ]] && [[ ! -d "node_modules" ]]; then
+        echo "Restoring node_modules..."
+        npm install
+    fi
+    
+    echo "Reference build process completed!"
 
 # Deploy contracts
 deploy network="amoy":
