@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import { Script, console } from "forge-std/Script.sol";
 import { Upgrades, Options } from "@openzeppelin-upgrades/Upgrades.sol";
-import { PropertyDataConsensus } from "../src/PropertyDataConsensus.sol";
+import { PropertyDataConsensus } from "../contracts/PropertyDataConsensus.sol";
 
 contract UpgradeConsensusScript is Script {
     function run() external {

@@ -3,8 +3,8 @@ pragma solidity ^0.8.28;
 
 import { Script, console } from "forge-std/Script.sol";
 import { Upgrades } from "@openzeppelin-upgrades/Upgrades.sol";
-import { VMahout } from "../src/VMahout.sol";
-import { PropertyDataConsensus } from "../src/PropertyDataConsensus.sol";
+import { VMahout } from "../contracts//VMahout.sol";
+import { PropertyDataConsensus } from "../contracts/PropertyDataConsensus.sol";
 
 contract DeployScript is Script {
     function run() external {
