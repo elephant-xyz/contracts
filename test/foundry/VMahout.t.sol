@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Test, console} from "forge-std/Test.sol";
-import {VMahout} from "../contracts/VMahout.sol";
-import {Upgrades, Options} from "@openzeppelin-upgrades/Upgrades.sol";
-import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import { Test, console } from "forge-std/Test.sol";
+import { VMahout } from "contracts/VMahout.sol";
+import { Upgrades, Options } from "@openzeppelin-upgrades/Upgrades.sol";
+import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 contract VMahoutTest is Test {
     VMahout public vMahout;
@@ -20,12 +20,7 @@ contract VMahoutTest is Test {
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
     function setUp() public {
-        bytes memory proxyData = abi.encodeWithSignature(
-            "initialize(address,address,address)",
-            admin,
-            minter,
-            upgrader
-        );
+        bytes memory proxyData = abi.encodeWithSignature("initialize(address,address,address)", admin, minter, upgrader);
         address proxy = Upgrades.deployUUPSProxy("VMahout.sol", proxyData);
         vMahout = VMahout(proxy);
     }

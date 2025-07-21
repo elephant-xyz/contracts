@@ -53,11 +53,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22.x"
-          cache: "npm"
+      - name: Install Just
+        uses: extractions/setup-just@v2
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -65,11 +65,8 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           aws-region: "us-east-1"
 
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Compile Contracts
-        run: npx hardhat compile
+      - name: Build Contracts
+        run: just build
 
       - name: Grant LEXICON_ORACLE_MANAGER_ROLE
         run: |
@@ -78,7 +75,7 @@ jobs:
           echo "Recipient: ${{ inputs.recipient }}"
           echo "Executed by: ${{ github.actor }}"
 
-          npx hardhat grantLexiconOracleManager \
-            --network ${{ inputs.network }} \
-            --proxy ${{ inputs.proxy }} \
-            --recipient ${{ inputs.recipient }}
+          just grant-roles ${{ inputs.network }}
+        env:
+          CONSENSUS_PROXY: ${{ inputs.proxy }}
+          RECIPIENT_ADDRESS: ${{ inputs.recipient }}

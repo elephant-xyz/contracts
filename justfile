@@ -7,7 +7,6 @@ default:
 # Install dependencies
 install:
     forge install
-    npm install
 
 # Build contracts
 build:
@@ -15,7 +14,7 @@ build:
 
 # Run tests
 test:
-    npm test
+    forge test
 
 # Build reference contracts for upgrade validation
 build-reference:
@@ -62,48 +61,16 @@ build-reference:
     # Checkout reference commit
     git checkout $REFERENCE_COMMIT
     
-    # Check if reference commit has Foundry or Hardhat setup
+    # Check if reference commit has Foundry setup
     if [[ -f "foundry.toml" ]]; then
         echo "Reference commit has Foundry setup, building with Forge..."
         forge build --build-info --build-info-path previous-builds/foundry-v1
-    elif [[ -f "hardhat.config.ts" ]] || [[ -f "hardhat.config.js" ]]; then
-        echo "Reference commit has Hardhat setup, building with Hardhat..."
-        
-        # Install dependencies if needed
-        if [[ ! -d "node_modules" ]]; then
-            echo "Installing dependencies..."
-            npm install
-        fi
-        
-        # Build with Hardhat
-        npx hardhat compile
-        
-        # Copy entire Hardhat artifacts to our reference directory
-        # This ensures we have all the necessary files for validation
-        if [[ -d "artifacts" ]]; then
-            mkdir -p previous-builds
-            mkdir -p previous-builds/artifacts-v1
-            mkdir -p previous-builds/hardhat-v1
-            
-            # Copy build-info files directly to avoid nested structure
-            cp -r artifacts/build-info/* previous-builds/hardhat-v1/
-            
-            echo "Copied Hardhat artifacts to reference directory"
-        else
-            echo "Warning: No Hardhat artifacts found"
-        fi
     else
-        echo "Warning: No build system found in reference commit. Skipping reference build."
+        echo "Warning: No Foundry setup found in reference commit. Skipping reference build."
     fi
     
     # Return to original state
     git checkout $CURRENT_COMMIT
-    
-    # Restore node_modules if they were removed by checkout
-    if [[ -f "package.json" ]] && [[ ! -d "node_modules" ]]; then
-        echo "Restoring node_modules..."
-        npm install
-    fi
     
     echo "Reference build process completed!"
 
@@ -205,7 +172,7 @@ upgrade-consensus network="amoy":
 
 # Clean build artifacts
 clean:
-    rm -rf out cache artifacts node_modules
+    rm -rf out cache artifacts
     rm -rf previous-builds
 
 # Format code
@@ -214,11 +181,117 @@ format:
 
 # Run linter
 lint:
-    npm run lint
+    forge fmt --check
 
 # Run all checks (for CI)
 check:
-    just format
     just lint
     just build
     just test
+
+# Dry run upgrade PropertyDataConsensus (for CI)
+upgrade-consensus-dry-run network="polygon":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Build reference first (unless skipping validation)
+    if [[ "${SKIP_VALIDATION:-false}" != "true" ]]; then
+        just build-reference
+    fi
+    
+    # Build current contracts
+    forge build
+    
+    # Run dry run upgrade
+    SKIP_VALIDATION=${SKIP_VALIDATION:-false} forge script script/UpgradeConsensus.s.sol \
+        --rpc-url {{network}} \
+        --broadcast \
+        --verify \
+        --etherscan-api-key $POLYGONSCAN_API_KEY \
+        --aws \
+        --sender $(cast wallet address --aws) \
+        --slow \
+        -vvvv
+
+# Dry run upgrade VMahout (for CI)
+upgrade-vmahout-dry-run network="polygon":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Build reference first (unless skipping validation)
+    if [[ "${SKIP_VALIDATION:-false}" != "true" ]]; then
+        just build-reference
+    fi
+    
+    # Build current contracts
+    forge build
+    
+    # Run dry run upgrade
+    forge script script/UpgradeVMahout.s.sol \
+        --rpc-url {{network}} \
+        --aws \
+        --sender $(cast wallet address --aws) \
+        --slow
+
+# Production upgrade PropertyDataConsensus (for release)
+upgrade-consensus-prod network="polygon":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Build reference first
+    just build-reference
+    
+    # Build current contracts
+    forge build
+    
+    # Run production upgrade
+    forge script script/UpgradeConsensus.s.sol \
+        --rpc-url {{network}} \
+        --broadcast \
+        --verify \
+        --etherscan-api-key $POLYGONSCAN_API_KEY \
+        --aws \
+        --sender $(cast wallet address --aws) \
+        --slow \
+        -vvvv
+
+# Production upgrade VMahout (for release)
+upgrade-vmahout-prod network="polygon":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Build reference first
+    just build-reference
+    
+    # Build current contracts
+    forge build
+    
+    # Run production upgrade
+    forge script script/UpgradeVMahout.s.sol \
+        --rpc-url {{network}} \
+        --broadcast \
+        --verify \
+        --etherscan-api-key $POLYGONSCAN_API_KEY \
+        --aws \
+        --sender $(cast wallet address --aws) \
+        --slow \
+        -vvvv
+
+# Grant LEXICON_ORACLE_MANAGER_ROLE
+grant-roles network="polygon":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Build contracts
+    forge build
+    
+    # Run grant roles script
+    forge script script/GrantRoles.s.sol \
+        --rpc-url {{network}} \
+        --broadcast \
+        --verify \
+        --etherscan-api-key $POLYGONSCAN_API_KEY \
+        --aws \
+        --sender $(cast wallet address --aws) \
+        --slow \
+        -vvvv

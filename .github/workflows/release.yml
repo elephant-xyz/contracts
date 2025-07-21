@@ -44,37 +44,19 @@ jobs:
         run: just build-reference
 
       - name: Build Contracts
-        run: forge build
+        run: just build
 
       - name: Get KMS Address
         run: |
           echo "KMS_ADDRESS=$(cast wallet address --aws)" >> $GITHUB_ENV
 
       - name: Upgrade PropertyDataConsensus
-        run: |
-          forge script script/UpgradeConsensus.s.sol \
-            --rpc-url $POLYGON_MAINNET_RPC_URL \
-            --broadcast \
-            --verify \
-            --etherscan-api-key $POLYGONSCAN_API_KEY \
-            --aws \
-            --sender $KMS_ADDRESS \
-            --slow \
-            -vvvv
+        run: just upgrade-consensus-prod polygon
         env:
           CONSENSUS_PROXY: "0x525E59e4DE2B51f52B9e30745a513E407652AB7c"
 
       - name: Upgrade vMahout
-        run: |
-          forge script script/UpgradeVMahout.s.sol \
-            --rpc-url $POLYGON_MAINNET_RPC_URL \
-            --broadcast \
-            --verify \
-            --etherscan-api-key $POLYGONSCAN_API_KEY \
-            --aws \
-            --sender $KMS_ADDRESS \
-            --slow \
-            -vvvv
+        run: just upgrade-vmahout-prod polygon
         env:
           VMAHOUT_PROXY: "0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18"
           MINTER_ADDRESS: "0x525E59e4DE2B51f52B9e30745a513E407652AB7c"

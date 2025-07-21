@@ -2,9 +2,9 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import {PropertyDataConsensus, IPropertyDataConsensus} from "contracts/PropertyDataConsensus.sol";
+import { PropertyDataConsensus, IPropertyDataConsensus } from "contracts/PropertyDataConsensus.sol";
 import "lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
-import {Upgrades} from "@openzeppelin-upgrades/Upgrades.sol";
+import { Upgrades } from "@openzeppelin-upgrades/Upgrades.sol";
 
 contract PropertyDataConsensusTest is Test {
     PropertyDataConsensus internal propertyDataConsensus;
@@ -68,9 +68,7 @@ contract PropertyDataConsensusTest is Test {
         vm.prank(unprivilegedUser);
         vm.expectRevert(
             abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                unprivilegedUser,
-                DEFAULT_ADMIN_ROLE
+                IAccessControl.AccessControlUnauthorizedAccount.selector, unprivilegedUser, DEFAULT_ADMIN_ROLE
             )
         );
         propertyDataConsensus.updateMinimumConsensus(5);
@@ -96,10 +94,8 @@ contract PropertyDataConsensusTest is Test {
         propertyDataConsensus.submitData(propertyHash1, dataGroupHash1, dataHash1);
 
         assertEq(propertyDataConsensus.getCurrentFieldDataHash(propertyHash1, dataGroupHash1), dataHash1);
-        IPropertyDataConsensus.DataVersion[] memory dataVesion = propertyDataConsensus.getConsensusHistory(
-            propertyHash1,
-            dataGroupHash1
-        );
+        IPropertyDataConsensus.DataVersion[] memory dataVesion =
+            propertyDataConsensus.getConsensusHistory(propertyHash1, dataGroupHash1);
         assertEq(dataVesion[dataVesion.length - 1].dataHash, dataHash1);
         assertEq(dataVesion[dataVesion.length - 1].oracles.length, 3);
     }
@@ -120,14 +116,14 @@ contract PropertyDataConsensusTest is Test {
         vm.expectEmit(true, true, true, true);
         emit IPropertyDataConsensus.DataSubmitted(propertyHash1, dataGroupHash1, oracle3, dataHash2);
         vm.expectEmit(true, true, true, false);
-        emit IPropertyDataConsensus.ConsensusUpdated(propertyHash1, dataGroupHash1, dataHash1, dataHash2, new address[](0));
+        emit IPropertyDataConsensus.ConsensusUpdated(
+            propertyHash1, dataGroupHash1, dataHash1, dataHash2, new address[](0)
+        );
         propertyDataConsensus.submitData(propertyHash1, dataGroupHash1, dataHash2);
 
         assertEq(propertyDataConsensus.getCurrentFieldDataHash(propertyHash1, dataGroupHash1), dataHash2);
-        IPropertyDataConsensus.DataVersion[] memory dataVesion = propertyDataConsensus.getConsensusHistory(
-            propertyHash1,
-            dataGroupHash1
-        );
+        IPropertyDataConsensus.DataVersion[] memory dataVesion =
+            propertyDataConsensus.getConsensusHistory(propertyHash1, dataGroupHash1);
         assertEq(dataVesion[dataVesion.length - 1].dataHash, dataHash2);
     }
 
@@ -164,10 +160,8 @@ contract PropertyDataConsensusTest is Test {
         vm.prank(oracle3);
         propertyDataConsensus.submitData(propertyHash1, dataGroupHash1, dataHash1);
 
-        IPropertyDataConsensus.DataVersion[] memory dataVesion = propertyDataConsensus.getConsensusHistory(
-            propertyHash1,
-            dataGroupHash1
-        );
+        IPropertyDataConsensus.DataVersion[] memory dataVesion =
+            propertyDataConsensus.getConsensusHistory(propertyHash1, dataGroupHash1);
         assertEq(dataVesion[dataVesion.length - 1].dataHash, dataHash1);
     }
 
@@ -179,11 +173,8 @@ contract PropertyDataConsensusTest is Test {
         vm.prank(oracle3);
         propertyDataConsensus.submitData(propertyHash1, dataGroupHash1, dataHash1);
 
-        address[] memory participants = propertyDataConsensus.getParticipantsForConsensusDataHash(
-            propertyHash1,
-            dataGroupHash1,
-            dataHash1
-        );
+        address[] memory participants =
+            propertyDataConsensus.getParticipantsForConsensusDataHash(propertyHash1, dataGroupHash1, dataHash1);
         assertEq(participants.length, 3);
         assertEq(participants[0], oracle1);
         assertEq(participants[1], oracle2);
@@ -192,7 +183,11 @@ contract PropertyDataConsensusTest is Test {
 
     function test_ViewFunctions_GetParticipantsForConsensusDataHash_RevertIfNoConsensus() public {
         bytes32 propertyHashFieldHash = keccak256(abi.encodePacked(propertyHash1, dataGroupHash1));
-        vm.expectRevert(abi.encodeWithSelector(PropertyDataConsensus.NoConsensusReachedForDataHash.selector, propertyHashFieldHash, dataHash2));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                PropertyDataConsensus.NoConsensusReachedForDataHash.selector, propertyHashFieldHash, dataHash2
+            )
+        );
         propertyDataConsensus.getParticipantsForConsensusDataHash(propertyHash1, dataGroupHash1, dataHash2);
     }
 
@@ -204,19 +199,15 @@ contract PropertyDataConsensusTest is Test {
         vm.prank(oracle3);
         propertyDataConsensus.submitData(propertyHash1, dataGroupHash1, dataHash1);
 
-        address[] memory participants = propertyDataConsensus.getCurrentConsensusParticipants(
-            propertyHash1,
-            dataGroupHash1
-        );
+        address[] memory participants =
+            propertyDataConsensus.getCurrentConsensusParticipants(propertyHash1, dataGroupHash1);
         assertEq(participants.length, 3);
     }
 
     function test_ViewFunctions_GetCurrentConsensusParticipants_ReturnEmptyIfNoConsensus() public view {
         bytes32 propertyHash2 = keccak256("property-999-current-test");
-        address[] memory participants = propertyDataConsensus.getCurrentConsensusParticipants(
-            propertyHash2,
-            dataGroupHash1
-        );
+        address[] memory participants =
+            propertyDataConsensus.getCurrentConsensusParticipants(propertyHash2, dataGroupHash1);
         assertEq(participants.length, 0);
     }
 
@@ -258,9 +249,7 @@ contract PropertyDataConsensusTest is Test {
         vm.prank(unprivilegedUser);
         vm.expectRevert(
             abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                unprivilegedUser,
-                LEXICON_ORACLE_MANAGER_ROLE
+                IAccessControl.AccessControlUnauthorizedAccount.selector, unprivilegedUser, LEXICON_ORACLE_MANAGER_ROLE
             )
         );
         propertyDataConsensus.setConsensusRequired(dataGroupHash1, 5);
