@@ -19,15 +19,15 @@ contract UpgradeConsensusScript is Script {
             Options memory opts;
             opts.unsafeSkipAllChecks = true;
 
-            Upgrades.upgradeProxy(proxyAddress, "PropertyDataConsensus.sol", "", opts);
+            Upgrades.upgradeProxy(proxyAddress, "PropertyDataConsensus.sol:PropertyDataConsensus", "", opts);
         } else {
             // Set up options with reference to previous build
             Options memory opts;
-            opts.referenceBuildInfoDir = "previous-builds/hardhat-v1";
-            opts.referenceContract = "hardhat-v1:contracts/PropertyDataConsensus.sol:PropertyDataConsensus";
+            opts.referenceBuildInfoDir = "previous-builds/build-info-v1";
+            opts.referenceContract = "build-info-v1:contracts/PropertyDataConsensus.sol:PropertyDataConsensus";
 
             // Upgrade the proxy to new implementation
-            Upgrades.upgradeProxy(proxyAddress, "PropertyDataConsensus.sol", "", opts);
+            Upgrades.upgradeProxy(proxyAddress, "PropertyDataConsensus.sol:PropertyDataConsensus", "", opts);
         }
 
         vm.stopBroadcast();

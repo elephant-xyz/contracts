@@ -20,7 +20,7 @@ contract UpgradeVMahoutScript is Script {
             Options memory opts;
             opts.unsafeSkipAllChecks = true;
 
-            Upgrades.upgradeProxy(proxyAddress, "VMahout.sol", "", opts);
+            Upgrades.upgradeProxy(proxyAddress, "VMahout.sol:VMahout", "", opts);
         } else {
             // Set up options with reference to previous build
             Options memory opts;
@@ -28,7 +28,7 @@ contract UpgradeVMahoutScript is Script {
             opts.referenceContract = "hardhat-v1:contracts/VMahout.sol:VMahout";
 
             // Upgrade the proxy to new implementation
-            Upgrades.upgradeProxy(proxyAddress, "VMahout.sol", "", opts);
+            Upgrades.upgradeProxy(proxyAddress, "VMahout.sol:VMahout", "", opts);
         }
 
         // Grant MINTER_ROLE if minter address provided
