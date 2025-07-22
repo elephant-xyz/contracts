@@ -86,7 +86,10 @@ build-reference:
         echo "Reference commit has Foundry setup, building with Forge..."
         forge build --build-info --build-info-path previous-builds/foundry-v1
     else
-        echo "Warning: No Foundry setup found in reference commit. Skipping reference build."
+        echo "Warning: No Foundry setup found in reference commit."
+        echo "Creating empty reference directory to indicate no validation needed..."
+        mkdir -p previous-builds/foundry-v1
+        echo "no-reference" > previous-builds/foundry-v1/.no-reference
     fi
     
     # Return to original state

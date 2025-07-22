@@ -13,7 +13,18 @@ contract UpgradeVMahoutScript is Script {
 
         vm.startBroadcast();
 
-        if (skipValidation) {
+        // Check if we should skip validation
+        bool shouldSkipValidation = skipValidation;
+        
+        // Also skip validation if no reference build is available
+        try vm.readFile("previous-builds/foundry-v1/.no-reference") {
+            console.log("No reference build available, skipping validation...");
+            shouldSkipValidation = true;
+        } catch {
+            // Reference build exists, continue with validation
+        }
+
+        if (shouldSkipValidation) {
             console.log("Skipping upgrade validation...");
 
             // Upgrade without validation
@@ -22,6 +33,7 @@ contract UpgradeVMahoutScript is Script {
 
             Upgrades.upgradeProxy(proxyAddress, "VMahout.sol:VMahout", "", opts);
         } else {
+            console.log("Using reference build for validation...");
             // Set up options with reference to previous build
             Options memory opts;
             opts.referenceBuildInfoDir = "previous-builds/foundry-v1";
