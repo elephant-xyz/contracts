@@ -14,7 +14,7 @@ build:
 
 # Run tests
 test:
-    forge test
+    forge test --force
 
 # Build reference contracts for upgrade validation
 build-reference:
