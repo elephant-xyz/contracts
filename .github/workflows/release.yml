@@ -54,12 +54,10 @@ jobs:
       - name: Upgrade PropertyDataConsensus
         run: just upgrade-consensus-prod polygon
         env:
-      CI: true
           CONSENSUS_PROXY: "0x525E59e4DE2B51f52B9e30745a513E407652AB7c"
 
       - name: Upgrade vMahout
         run: just upgrade-vmahout-prod polygon
         env:
-      CI: true
           VMAHOUT_PROXY: "0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18"
           MINTER_ADDRESS: "0x525E59e4DE2B51f52B9e30745a513E407652AB7c"
