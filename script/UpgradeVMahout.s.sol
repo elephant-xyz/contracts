@@ -24,8 +24,8 @@ contract UpgradeVMahoutScript is Script {
         } else {
             // Set up options with reference to previous build
             Options memory opts;
-            opts.referenceBuildInfoDir = "previous-builds/hardhat-v1";
-            opts.referenceContract = "hardhat-v1:contracts/VMahout.sol:VMahout";
+            opts.referenceBuildInfoDir = "previous-builds/foundry-v1";
+            opts.referenceContract = "foundry-v1:contracts/VMahout.sol:VMahout";
 
             // Upgrade the proxy to new implementation
             Upgrades.upgradeProxy(proxyAddress, "VMahout.sol:VMahout", "", opts);

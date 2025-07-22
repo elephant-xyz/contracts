@@ -109,7 +109,8 @@ deploy network="amoy":
     # Build reference first
     just build-reference
     
-    # Build current contracts
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
     forge build
     
     # Run deployment
@@ -129,7 +130,8 @@ upgrade-vmahout-local:
         just build-reference
     fi
     
-    # Build current contracts
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
     forge build
     
     # Run upgrade
@@ -148,7 +150,8 @@ upgrade-vmahout network="amoy":
         just build-reference
     fi
     
-    # Build current contracts
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
     forge build
     
     # Run upgrade
@@ -168,7 +171,8 @@ upgrade-consensus-local:
         just build-reference
     fi
     
-    # Build current contracts
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
     forge build
     
     # Run upgrade
@@ -187,7 +191,8 @@ upgrade-consensus network="amoy":
         just build-reference
     fi
     
-    # Build current contracts
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
     forge build
     
     # Run upgrade
@@ -226,7 +231,8 @@ upgrade-consensus-dry-run network="polygon":
         just build-reference
     fi
     
-    # Build current contracts
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
     forge build
     
     # Run dry run upgrade
@@ -250,7 +256,8 @@ upgrade-vmahout-dry-run network="polygon":
         just build-reference
     fi
     
-    # Build current contracts
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
     forge build
     
     # Run dry run upgrade
@@ -268,7 +275,8 @@ upgrade-consensus-prod network="polygon":
     # Build reference first
     just build-reference
     
-    # Build current contracts
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
     forge build
     
     # Run production upgrade
@@ -290,7 +298,8 @@ upgrade-vmahout-prod network="polygon":
     # Build reference first
     just build-reference
     
-    # Build current contracts
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
     forge build
     
     # Run production upgrade
