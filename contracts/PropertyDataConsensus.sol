@@ -1,25 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 // --- Interface IPropertyDataConsensus ---
 interface IPropertyDataConsensus {
     // --- Events ---
     event DataSubmitted(
-        bytes32 indexed propertyHash,
-        bytes32 indexed dataGroupHash,
-        address indexed submitter,
-        bytes32 dataHash
+        bytes32 indexed propertyHash, bytes32 indexed dataGroupHash, address indexed submitter, bytes32 dataHash
     );
     event ConsensusReached(
-        bytes32 indexed propertyHash,
-        bytes32 indexed dataGroupHash,
-        bytes32 dataHash,
-        address[] oracles
+        bytes32 indexed propertyHash, bytes32 indexed dataGroupHash, bytes32 dataHash, address[] oracles
     );
     event ConsensusUpdated(
         bytes32 indexed propertyHash,
@@ -65,30 +59,45 @@ interface IPropertyDataConsensus {
         bytes32 propertyHash,
         bytes32 dataGroupHash,
         bytes32 dataHash
-    ) external view returns (uint256 count);
+    )
+        external
+        view
+        returns (uint256 count);
 
     function getConsensusHistory(
         bytes32 propertyHash,
         bytes32 dataGroupHash
-    ) external view returns (IPropertyDataConsensus.DataVersion[] memory);
+    )
+        external
+        view
+        returns (IPropertyDataConsensus.DataVersion[] memory);
 
     function getParticipantsForConsensusDataHash(
         bytes32 propertyHash,
         bytes32 dataGroupHash,
         bytes32 dataHash
-    ) external view returns (address[] memory);
+    )
+        external
+        view
+        returns (address[] memory);
 
     function getCurrentConsensusParticipants(
         bytes32 propertyHash,
         bytes32 dataGroupHash
-    ) external view returns (address[] memory);
+    )
+        external
+        view
+        returns (address[] memory);
 
     function hasUserSubmittedDataHash(
         bytes32 propertyHash,
         bytes32 dataGroupHash,
         bytes32 dataHash,
         address submitter
-    ) external view returns (bool);
+    )
+        external
+        view
+        returns (bool);
 
     /**
      * @notice Set the vMahout token address
@@ -187,11 +196,8 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
         uint256 requiredConsensus = _getConsensusRequired(dataGroupHash);
         if (submittersForDataHash.length() >= requiredConsensus) {
             address[] memory oracles = submittersForDataHash.values();
-            IPropertyDataConsensus.DataVersion memory newVersion = IPropertyDataConsensus.DataVersion({
-                dataHash: dataHash,
-                oracles: oracles,
-                timestamp: block.timestamp
-            });
+            IPropertyDataConsensus.DataVersion memory newVersion =
+                IPropertyDataConsensus.DataVersion({ dataHash: dataHash, oracles: oracles, timestamp: block.timestamp });
             bytes32 oldDataHash = _currentConsensusDataHash[propertyHashFieldHash];
             _currentConsensusDataHash[propertyHashFieldHash] = dataHash;
             _consensusLog[propertyHashFieldHash].push(newVersion);
@@ -211,7 +217,12 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
     function getCurrentFieldDataHash(
         bytes32 propertyHash,
         bytes32 dataGroupHash
-    ) public view override returns (bytes32) {
+    )
+        public
+        view
+        override
+        returns (bytes32)
+    {
         bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(propertyHash, dataGroupHash);
         return _currentConsensusDataHash[propertyHashFieldHash];
     }
@@ -220,7 +231,12 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
         bytes32 propertyHash,
         bytes32 dataGroupHash,
         bytes32 dataHash
-    ) public view override returns (uint256 count) {
+    )
+        public
+        view
+        override
+        returns (uint256 count)
+    {
         bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(propertyHash, dataGroupHash);
         return _submissionData[propertyHashFieldHash][dataHash].length();
     }
@@ -228,7 +244,12 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
     function getConsensusHistory(
         bytes32 propertyHash,
         bytes32 dataGroupHash
-    ) public view override returns (IPropertyDataConsensus.DataVersion[] memory) {
+    )
+        public
+        view
+        override
+        returns (IPropertyDataConsensus.DataVersion[] memory)
+    {
         bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(propertyHash, dataGroupHash);
         return _consensusLog[propertyHashFieldHash];
     }
@@ -237,7 +258,12 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
         bytes32 propertyHash,
         bytes32 dataGroupHash,
         bytes32 dataHash
-    ) public view override returns (address[] memory) {
+    )
+        public
+        view
+        override
+        returns (address[] memory)
+    {
         bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(propertyHash, dataGroupHash);
         IPropertyDataConsensus.DataVersion[] storage versions = _consensusLog[propertyHashFieldHash];
         for (uint256 i = versions.length; i > 0; i--) {
@@ -251,7 +277,12 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
     function getCurrentConsensusParticipants(
         bytes32 propertyHash,
         bytes32 dataGroupHash
-    ) public view override returns (address[] memory) {
+    )
+        public
+        view
+        override
+        returns (address[] memory)
+    {
         bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(propertyHash, dataGroupHash);
         bytes32 currentDataHash = _currentConsensusDataHash[propertyHashFieldHash];
         if (currentDataHash == bytes32(0)) {
@@ -265,7 +296,12 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
         bytes32 dataGroupHash,
         bytes32 dataHash,
         address submitter
-    ) public view override returns (bool) {
+    )
+        public
+        view
+        override
+        returns (bool)
+    {
         bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(propertyHash, dataGroupHash);
         return _submissionData[propertyHashFieldHash][dataHash].contains(submitter);
     }
@@ -273,7 +309,10 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
     function setConsensusRequired(
         bytes32 dataGroupHash,
         uint256 requiredConsensus
-    ) external onlyRole(LEXICON_ORACLE_MANAGER_ROLE) {
+    )
+        external
+        onlyRole(LEXICON_ORACLE_MANAGER_ROLE)
+    {
         uint256 oldValue = consensusRequired[dataGroupHash];
         consensusRequired[dataGroupHash] = requiredConsensus;
         emit DataGroupConsensusUpdated(dataGroupHash, oldValue, requiredConsensus);
@@ -290,7 +329,7 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
         return required == 0 ? minimumConsensus : required;
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) { }
 
     /**
      * @notice Sets the vMahout token address used for minting rewards to oracles.

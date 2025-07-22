@@ -1,6 +1,6 @@
 # .github/workflows/ci.yml
 
-name: Hardhat PR Check
+name: Foundry PR Check
 
 on:
   pull_request:
@@ -16,56 +16,28 @@ concurrency:
 
 jobs:
   build-and-test:
-    name: Build & Test (Node ${{ matrix.node-version }})
+    name: Build & Test
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [22]
     env:
+      CI: true
       POLYGON_MAINNET_RPC_URL: ${{ secrets.POLYGON_MAINNET_RPC_URL }}
       POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
-      KMS_KEY_ID: ${{ secrets.KMS_KEY_ID }}
+      AWS_KMS_KEY_ID: ${{ secrets.KMS_KEY_ID }}
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: "npm"
+          submodules: recursive
+          fetch-depth: 0 # Need full history for reference builds
 
-      - name: Install Dependencies
-        run: npm ci
+      - name: Install Just
+        uses: extractions/setup-just@v2
 
-      - name: Lint Code
-        run: npm run lint
-
-      - name: Check Formatting
-        run: npm run format:check
-
-      - name: Compile Contracts
-        run: npx hardhat compile
-
-      - name: Type Check
-        run: npm run typecheck
-
-      - name: Hardhat tests
-        run: npx hardhat test
-        env:
-          CI: true
-
-      - name: Upload Coverage Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report-node-${{ matrix.node-version }}
-          path: ./coverage/
-          if-no-files-found: warn
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -73,10 +45,23 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           aws-region: "us-east-1"
 
-      - name: Upgrade vMahout
-        run: |
-          npx hardhat upgrade-vmahout --network polygon --proxy 0x724d3E7e0da94DF12793F7Fbce46388C293C572E --minter 0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18
+      - name: Build Reference Contracts
+        run: just build-reference
 
-      - name: Upgrade PropertyDataConsensus
+      - name: Run build and checks
+        run: just check
+
+      - name: Get KMS Address
         run: |
-          npx hardhat upgradeConsensus --network polygon --proxy 0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18
+          echo "KMS_ADDRESS=$(cast wallet address --aws)" >> $GITHUB_ENV
+
+      - name: Upgrade PropertyDataConsensus (Dry Run)
+        run: just upgrade-consensus-prod polygon
+        env:
+          CONSENSUS_PROXY: "0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18"
+
+      - name: Upgrade vMahout (Dry Run)
+        run: just upgrade-vmahout-prod polygon
+        env:
+          VMAHOUT_PROXY: "0x724d3E7e0da94DF12793F7Fbce46388C293C572E"
+          MINTER_ADDRESS: "0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18"
