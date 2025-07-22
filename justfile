@@ -90,7 +90,14 @@ build-reference:
     fi
     
     # Return to original state
-    git switch $CURRENT_BRANCH
+    # Use branch name for local development, commit hash for CI
+    if [[ "${CI:-false}" == "true" ]] || [[ "$CURRENT_BRANCH" == *"merge"* ]] || [[ "$CURRENT_BRANCH" == "detached" ]] || [[ "$CURRENT_BRANCH" == "unknown" ]]; then
+        # In CI or detached state, checkout the commit hash
+        git checkout $CURRENT_COMMIT
+    else
+        # Local development with real branch, checkout the branch name
+        git checkout $CURRENT_BRANCH
+    fi
     
     echo "Reference build process completed!"
 
