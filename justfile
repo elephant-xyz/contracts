@@ -24,7 +24,7 @@ build-reference:
     echo "Building reference contracts for upgrade validation..."
     
     # Save current state
-    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
     CURRENT_COMMIT=$(git rev-parse HEAD)
     
     # Ensure we have a clean working directory
