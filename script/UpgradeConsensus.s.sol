@@ -14,7 +14,7 @@ contract UpgradeConsensusScript is Script {
 
         // Check if we should skip validation
         bool shouldSkipValidation = skipValidation;
-        
+
         // Also skip validation if no reference build is available
         try vm.readFile("previous-builds/foundry-v1/.no-reference") {
             console.log("No reference build available, skipping validation...");

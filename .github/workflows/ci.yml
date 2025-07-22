@@ -56,7 +56,7 @@ jobs:
           echo "KMS_ADDRESS=$(cast wallet address --aws)" >> $GITHUB_ENV
 
       - name: Upgrade PropertyDataConsensus (Dry Run)
-        run: SKIP_VALIDATION=true just upgrade-consensus-prod polygon
+        run: just upgrade-consensus-prod polygon
         env:
           CONSENSUS_PROXY: "0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18"
 

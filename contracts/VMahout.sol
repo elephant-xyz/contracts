@@ -46,15 +46,24 @@ contract VMahout is
         _mint(to, amount);
     }
 
-    function transfer(address to, uint256 amount) public override returns (bool) {
+    function transfer(address, /* to */ uint256 /* amount */ ) public pure override returns (bool) {
         revert VMahout__TransferNotAllowed();
     }
 
-    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
+    function transferFrom(
+        address, /* from */
+        address, /* to */
+        uint256 /* amount */
+    )
+        public
+        pure
+        override
+        returns (bool)
+    {
         revert VMahout__TransferNotAllowed();
     }
 
-    function approve(address spender, uint256 amount) public override returns (bool) {
+    function approve(address, /* spender */ uint256 /* amount */ ) public pure override returns (bool) {
         revert VMahout__TransferNotAllowed();
     }
 

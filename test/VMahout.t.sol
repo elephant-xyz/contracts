@@ -25,7 +25,7 @@ contract VMahoutTest is Test {
         vMahout = VMahout(proxy);
     }
 
-    function test_Initialization() public {
+    function test_Initialization() public view {
         assertEq(vMahout.name(), "vMahout", "Name should be vMahout");
         assertEq(vMahout.symbol(), "VMHT", "Symbol should be VMHT");
 
