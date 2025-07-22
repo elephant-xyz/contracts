@@ -30,6 +30,8 @@ build-reference:
     # Ensure we have a clean working directory
     if [[ -n $(git status --porcelain) ]]; then
         echo "Error: Working directory is not clean. Please commit or stash your changes."
+        echo "git status:"
+        echo "$(git status --porcelain)"
         exit 1
     fi
     
@@ -70,7 +72,7 @@ build-reference:
     fi
     
     # Return to original state
-    git checkout $CURRENT_COMMIT
+    git switch $CURRENT_BRANCH
     
     echo "Reference build process completed!"
 
