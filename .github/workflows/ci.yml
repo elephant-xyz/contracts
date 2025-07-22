@@ -56,12 +56,12 @@ jobs:
           echo "KMS_ADDRESS=$(cast wallet address --aws)" >> $GITHUB_ENV
 
       - name: Upgrade PropertyDataConsensus (Dry Run)
-        run: SKIP_VALIDATION=true just upgrade-consensus-dry-run polygon
+        run: SKIP_VALIDATION=true just upgrade-consensus-prod polygon
         env:
           CONSENSUS_PROXY: "0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18"
 
       - name: Upgrade vMahout (Dry Run)
-        run: just upgrade-vmahout-dry-run polygon
+        run: just upgrade-vmahout-prod polygon
         env:
           VMAHOUT_PROXY: "0x724d3E7e0da94DF12793F7Fbce46388C293C572E"
           MINTER_ADDRESS: "0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18"
