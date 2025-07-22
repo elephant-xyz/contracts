@@ -24,22 +24,40 @@ build-reference:
     echo "Building reference contracts for upgrade validation..."
     
     # Save current state
-    CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
     CURRENT_COMMIT=$(git rev-parse HEAD)
     
-    # Ensure we have a clean working directory
-    if [[ -n $(git status --porcelain) ]]; then
-        echo "Error: Working directory is not clean. Please commit or stash your changes."
-        echo "git status:"
-        echo "$(git status --porcelain)"
-        exit 1
+    # Try to get current branch name, handle detached HEAD in CI
+    CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "detached")
+    
+    # In CI, we might be in detached HEAD state, so check environment variables
+    if [[ "$CURRENT_BRANCH" == "detached" ]]; then
+        # In GitHub Actions, use GITHUB_REF_NAME or GITHUB_HEAD_REF
+        if [[ -n "${GITHUB_REF_NAME:-}" ]]; then
+            CURRENT_BRANCH="$GITHUB_REF_NAME"
+        elif [[ -n "${GITHUB_HEAD_REF:-}" ]]; then
+            CURRENT_BRANCH="$GITHUB_HEAD_REF"
+        else
+            CURRENT_BRANCH="unknown"
+        fi
+        echo "Detected CI environment, using branch: $CURRENT_BRANCH"
+    fi
+    
+    # In CI, skip working directory check as it's always clean
+    if [[ "${CI:-false}" != "true" ]]; then
+        # Ensure we have a clean working directory (only for local development)
+        if [[ -n $(git status --porcelain) ]]; then
+            echo "Error: Working directory is not clean. Please commit or stash your changes."
+            echo "git status:"
+            echo "$(git status --porcelain)"
+            exit 1
+        fi
     fi
     
     # Create reference build directory
     mkdir -p previous-builds/foundry-v1
     
     # Determine reference commit
-    if [[ "$CURRENT_BRANCH" == "main" ]]; then
+    if [[ "$CURRENT_BRANCH" == "main" ]] || [[ "$CURRENT_BRANCH" == "refs/heads/main" ]]; then
         echo "On main branch, using previous commit as reference..."
         REFERENCE_COMMIT=$(git rev-parse HEAD~1 2>/dev/null || echo "")
         
@@ -49,8 +67,8 @@ build-reference:
             exit 0
         fi
     else
-        echo "On feature branch, using main branch as reference..."
-        REFERENCE_COMMIT=$(git rev-parse origin/main 2>/dev/null || echo "")
+        echo "On feature branch ($CURRENT_BRANCH), using main branch as reference..."
+        REFERENCE_COMMIT=$(git rev-parse origin/main 2>/dev/null || git rev-parse main 2>/dev/null || echo "")
         
         if [[ -z "$REFERENCE_COMMIT" ]]; then
             echo "Warning: No main branch found. Skipping reference build."
