@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {VMahout} from "./VMahout.sol";
+import { Initializable } from
+    "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { AccessControlUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import { UUPSUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { EnumerableSet } from
+    "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { VMahout } from "./VMahout.sol";
 
 /**
  * @title PropertyDataConsensus
@@ -32,9 +36,7 @@ contract PropertyDataConsensus is
     );
     event MinimumConsensusUpdated(uint256 oldValue, uint256 newValue);
     event DataGroupConsensusUpdated(
-        bytes32 indexed dataGroupHash,
-        uint256 oldValue,
-        uint256 newValue
+        bytes32 indexed dataGroupHash, uint256 oldValue, uint256 newValue
     );
 
     // --- Structs ---
@@ -50,10 +52,11 @@ contract PropertyDataConsensus is
         bytes32 dataHash;
     }
     // Minimum number of different addresses required for consensus
+
     uint256 public minimumConsensus;
 
-    mapping(bytes32 => mapping(bytes32 => EnumerableSet.AddressSet))
-        private _submissionData;
+    mapping(bytes32 => mapping(bytes32 => EnumerableSet.AddressSet)) private
+        _submissionData;
     mapping(bytes32 => bytes32) private _currentConsensusDataHash;
     mapping(bytes32 => DataVersion[]) private _consensusLog;
     VMahout public vMahout;
@@ -63,17 +66,13 @@ contract PropertyDataConsensus is
 
     // Custom Errors
     error AlreadySubmittedThisDataHash(
-        address submitter,
-        bytes32 propertyHashFieldHash,
-        bytes32 dataHash
+        address submitter, bytes32 propertyHashFieldHash, bytes32 dataHash
     );
     error DataHashAlreadyConsensus(
-        bytes32 propertyHashFieldHash,
-        bytes32 dataHash
+        bytes32 propertyHashFieldHash, bytes32 dataHash
     );
     error NoConsensusReachedForDataHash(
-        bytes32 propertyHashFieldHash,
-        bytes32 dataHash
+        bytes32 propertyHashFieldHash, bytes32 dataHash
     );
     error NoConsensusHistory(bytes32 propertyHashFieldHash);
 
@@ -88,7 +87,11 @@ contract PropertyDataConsensus is
     function _getPropertyHashFieldHash(
         bytes32 propertyHash,
         bytes32 dataGroupHash
-    ) internal pure returns (bytes32) {
+    )
+        internal
+        pure
+        returns (bytes32)
+    {
         return keccak256(abi.encodePacked(propertyHash, dataGroupHash));
     }
 
@@ -100,7 +103,10 @@ contract PropertyDataConsensus is
     function initialize(
         uint256 _minimumConsensus,
         address initialAdmin
-    ) external initializer {
+    )
+        external
+        initializer
+    {
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
@@ -109,9 +115,10 @@ contract PropertyDataConsensus is
         _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
     }
 
-    function updateMinimumConsensus(
-        uint256 newMinimumConsensus
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function updateMinimumConsensus(uint256 newMinimumConsensus)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         if (newMinimumConsensus < 3) {
             revert InvalidMinimumConsensus(newMinimumConsensus);
         }
@@ -124,7 +131,9 @@ contract PropertyDataConsensus is
         bytes32 propertyHash,
         bytes32 dataGroupHash,
         bytes32 dataHash
-    ) public {
+    )
+        public
+    {
         _submitDataInternal(propertyHash, dataGroupHash, dataHash);
         if (address(vMahout) != address(0)) {
             vMahout.mint(msg.sender, 0.016 ether);
@@ -154,12 +163,12 @@ contract PropertyDataConsensus is
         bytes32 propertyHash,
         bytes32 dataGroupHash,
         bytes32 dataHash
-    ) internal {
+    )
+        internal
+    {
         address submitter = msg.sender;
-        bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(
-            propertyHash,
-            dataGroupHash
-        );
+        bytes32 propertyHashFieldHash =
+            _getPropertyHashFieldHash(propertyHash, dataGroupHash);
         if (_currentConsensusDataHash[propertyHashFieldHash] == dataHash) {
             revert DataHashAlreadyConsensus(propertyHashFieldHash, dataHash);
         }
@@ -175,24 +184,27 @@ contract PropertyDataConsensus is
     function getCurrentFieldDataHash(
         bytes32 propertyHash,
         bytes32 dataGroupHash
-    ) public view returns (bytes32) {
-        bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(
-            propertyHash,
-            dataGroupHash
-        );
+    )
+        public
+        view
+        returns (bytes32)
+    {
+        bytes32 propertyHashFieldHash =
+            _getPropertyHashFieldHash(propertyHash, dataGroupHash);
         return _currentConsensusDataHash[propertyHashFieldHash];
     }
 
     function setConsensusRequired(
         bytes32 dataGroupHash,
         uint256 requiredConsensus
-    ) external onlyRole(LEXICON_ORACLE_MANAGER_ROLE) {
+    )
+        external
+        onlyRole(LEXICON_ORACLE_MANAGER_ROLE)
+    {
         uint256 oldValue = consensusRequired[dataGroupHash];
         consensusRequired[dataGroupHash] = requiredConsensus;
         emit DataGroupConsensusUpdated(
-            dataGroupHash,
-            oldValue,
-            requiredConsensus
+            dataGroupHash, oldValue, requiredConsensus
         );
     }
 
@@ -202,25 +214,30 @@ contract PropertyDataConsensus is
      * @param dataGroupHash The hash of the data group
      * @return The required consensus threshold
      */
-    function _getConsensusRequired(
-        bytes32 dataGroupHash
-    ) internal view returns (uint256) {
+    function _getConsensusRequired(bytes32 dataGroupHash)
+        internal
+        view
+        returns (uint256)
+    {
         uint256 required = consensusRequired[dataGroupHash];
         return required == 0 ? minimumConsensus : required;
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    { }
 
     /**
      * @notice Sets the vMahout token address used for minting rewards to oracles.
      * @dev Can only be called by an account with DEFAULT_ADMIN_ROLE.
      * @param _vMahout The address of the vMahout token contract.
      */
-    function setVMahout(
-        address _vMahout
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setVMahout(address _vMahout)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         vMahout = VMahout(_vMahout);
     }
 }
