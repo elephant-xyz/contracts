@@ -66,25 +66,13 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
 
     /**
      * @notice Initialize the contract
-     * @param _minimumConsensus Minimum number of addresses required for consensus
      * @param initialAdmin Address that will be granted DEFAULT_ADMIN_ROLE and ORACLE_MANAGER_ROLE.
      */
-    function initialize(uint256 _minimumConsensus, address initialAdmin) external initializer {
+    function initialize(address initialAdmin) external initializer {
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
-        minimumConsensus = _minimumConsensus < 3 ? 3 : _minimumConsensus;
-
         _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
-    }
-
-    function updateMinimumConsensus(uint256 newMinimumConsensus) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (newMinimumConsensus < 3) {
-            revert InvalidMinimumConsensus(newMinimumConsensus);
-        }
-        uint256 oldValue = minimumConsensus;
-        minimumConsensus = newMinimumConsensus;
-        emit MinimumConsensusUpdated(oldValue, newMinimumConsensus);
     }
 
     function submitData(bytes32 propertyHash, bytes32 dataGroupHash, bytes32 dataHash) public {
@@ -127,29 +115,6 @@ contract PropertyDataConsensus is Initializable, AccessControlUpgradeable, UUPSU
     function getCurrentFieldDataHash(bytes32 propertyHash, bytes32 dataGroupHash) public view returns (bytes32) {
         bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(propertyHash, dataGroupHash);
         return _currentConsensusDataHash[propertyHashFieldHash];
-    }
-
-    function setConsensusRequired(
-        bytes32 dataGroupHash,
-        uint256 requiredConsensus
-    )
-        external
-        onlyRole(LEXICON_ORACLE_MANAGER_ROLE)
-    {
-        uint256 oldValue = consensusRequired[dataGroupHash];
-        consensusRequired[dataGroupHash] = requiredConsensus;
-        emit DataGroupConsensusUpdated(dataGroupHash, oldValue, requiredConsensus);
-    }
-
-    /**
-     * @notice Gets the consensus threshold for a specific data group
-     * @dev Returns the custom threshold if set, otherwise returns the global minimum consensus
-     * @param dataGroupHash The hash of the data group
-     * @return The required consensus threshold
-     */
-    function _getConsensusRequired(bytes32 dataGroupHash) internal view returns (uint256) {
-        uint256 required = consensusRequired[dataGroupHash];
-        return required == 0 ? minimumConsensus : required;
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) { }

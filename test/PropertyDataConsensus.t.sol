@@ -27,57 +27,13 @@ contract PropertyDataConsensusTest is Test {
     function setUp() public {
         vm.prank(admin);
         address proxy = Upgrades.deployUUPSProxy(
-            "PropertyDataConsensus.sol:PropertyDataConsensus",
-            abi.encodeWithSignature("initialize(uint256,address)", 3, admin)
+            "PropertyDataConsensus.sol:PropertyDataConsensus", abi.encodeWithSignature("initialize(address)", admin)
         );
         propertyDataConsensus = PropertyDataConsensus(proxy);
     }
 
     function test_Initialization_ShouldSetDeployerAsAdmin() public view {
         assertTrue(propertyDataConsensus.hasRole(DEFAULT_ADMIN_ROLE, admin));
-    }
-
-    function test_Initialization_ShouldSetInitialMinimumConsensus() public view {
-        assertEq(propertyDataConsensus.minimumConsensus(), 3);
-    }
-
-    function test_Initialization_ShouldSetMinimumConsensusTo3IfInitializedWithLessThan3() public {
-        vm.prank(admin);
-        address proxy = Upgrades.deployUUPSProxy(
-            "PropertyDataConsensus.sol:PropertyDataConsensus",
-            abi.encodeWithSignature("initialize(uint256,address)", 1, admin)
-        );
-        PropertyDataConsensus newConsensus = PropertyDataConsensus(proxy);
-        assertEq(newConsensus.minimumConsensus(), 3);
-    }
-
-    function test_Initialization_ShouldNotAllowReInitialization() public {
-        vm.expectRevert(abi.encodeWithSignature("InvalidInitialization()"));
-        propertyDataConsensus.initialize(3, unprivilegedUser);
-    }
-
-    function test_UpdateMinimumConsensus_ShouldAllowAdminToUpdate() public {
-        vm.prank(admin);
-        vm.expectEmit(true, true, true, true);
-        emit PropertyDataConsensus.MinimumConsensusUpdated(3, 4);
-        propertyDataConsensus.updateMinimumConsensus(4);
-        assertEq(propertyDataConsensus.minimumConsensus(), 4);
-    }
-
-    function test_UpdateMinimumConsensus_ShouldPreventNonAdminUpdate() public {
-        vm.prank(unprivilegedUser);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector, unprivilegedUser, DEFAULT_ADMIN_ROLE
-            )
-        );
-        propertyDataConsensus.updateMinimumConsensus(5);
-    }
-
-    function test_UpdateMinimumConsensus_ShouldRevertIfNewMinimumIsLessThan3() public {
-        vm.prank(admin);
-        vm.expectRevert(abi.encodeWithSelector(PropertyDataConsensus.InvalidMinimumConsensus.selector, 2));
-        propertyDataConsensus.updateMinimumConsensus(2);
     }
 
     function test_ConsensusLogic_ShouldReachConsensusWhenMinimumSubmissionsMet() public {
@@ -112,82 +68,5 @@ contract PropertyDataConsensusTest is Test {
         assertEq(propertyDataConsensus.getCurrentFieldDataHash(propertyHash1, dataGroupHash1), dataHash1);
         bytes32 propertyHash2 = keccak256("property-789-local-test");
         assertEq(propertyDataConsensus.getCurrentFieldDataHash(propertyHash2, dataGroupHash1), bytes32(0));
-    }
-
-    function test_ConfigurableConsensus_SetConsensusRequired() public {
-        vm.prank(admin);
-        propertyDataConsensus.grantRole(LEXICON_ORACLE_MANAGER_ROLE, admin);
-
-        vm.prank(admin);
-        vm.expectEmit(true, true, true, true);
-        emit PropertyDataConsensus.DataGroupConsensusUpdated(dataGroupHash1, 0, 5);
-        propertyDataConsensus.setConsensusRequired(dataGroupHash1, 5);
-
-        assertEq(propertyDataConsensus.consensusRequired(dataGroupHash1), 5);
-    }
-
-    function test_ConfigurableConsensus_EmitEventWhenUpdating() public {
-        vm.startPrank(admin);
-        propertyDataConsensus.grantRole(LEXICON_ORACLE_MANAGER_ROLE, admin);
-        propertyDataConsensus.setConsensusRequired(dataGroupHash1, 5);
-
-        vm.expectEmit(true, true, true, true);
-        emit PropertyDataConsensus.DataGroupConsensusUpdated(dataGroupHash1, 5, 7);
-        propertyDataConsensus.setConsensusRequired(dataGroupHash1, 7);
-        vm.stopPrank();
-    }
-
-    function test_ConfigurableConsensus_PreventNonManagerFromSetting() public {
-        vm.prank(unprivilegedUser);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector, unprivilegedUser, LEXICON_ORACLE_MANAGER_ROLE
-            )
-        );
-        propertyDataConsensus.setConsensusRequired(dataGroupHash1, 5);
-    }
-
-    function test_ConfigurableConsensus_ShouldNotReachConsensusWith3SubmissionsWhenThresholdIs4() public {
-        vm.startPrank(admin);
-        propertyDataConsensus.grantRole(LEXICON_ORACLE_MANAGER_ROLE, admin);
-        propertyDataConsensus.setConsensusRequired(dataGroupHash1, 4);
-        vm.stopPrank();
-
-        bytes32 propertyHash2 = keccak256("property-456-main-data");
-
-        vm.prank(oracle1);
-        propertyDataConsensus.submitData(propertyHash2, dataGroupHash1, dataHash1);
-
-        // With immediate update, current field is set on first submission regardless of threshold
-        assertEq(propertyDataConsensus.getCurrentFieldDataHash(propertyHash2, dataGroupHash1), dataHash1);
-    }
-
-    function test_ConfigurableConsensus_ShouldReachConsensusWith4SubmissionsWhenThresholdIs4() public {
-        vm.startPrank(admin);
-        propertyDataConsensus.grantRole(LEXICON_ORACLE_MANAGER_ROLE, admin);
-        propertyDataConsensus.setConsensusRequired(dataGroupHash1, 4);
-        vm.stopPrank();
-
-        bytes32 propertyHash3 = keccak256("property-789-main-data");
-
-        vm.prank(oracle1);
-        vm.expectEmit(true, true, true, true);
-        emit PropertyDataConsensus.DataSubmitted(propertyHash3, dataGroupHash1, oracle1, dataHash1);
-        vm.expectEmit(true, true, true, false);
-        emit PropertyDataConsensus.ConsensusReached(propertyHash3, dataGroupHash1, dataHash1, new address[](0));
-        propertyDataConsensus.submitData(propertyHash3, dataGroupHash1, dataHash1);
-
-        assertEq(propertyDataConsensus.getCurrentFieldDataHash(propertyHash3, dataGroupHash1), dataHash1);
-    }
-
-    function test_ConfigurableConsensus_ShouldUseDefaultConsensusForOtherGroups() public {
-        bytes32 dataGroupHash2 = keccak256("property-details-group");
-
-        vm.prank(oracle1);
-        vm.expectEmit(true, true, true, true);
-        emit PropertyDataConsensus.DataSubmitted(propertyHash1, dataGroupHash2, oracle1, dataHash1);
-        vm.expectEmit(true, true, true, false);
-        emit PropertyDataConsensus.ConsensusReached(propertyHash1, dataGroupHash2, dataHash1, new address[](0));
-        propertyDataConsensus.submitData(propertyHash1, dataGroupHash2, dataHash1);
     }
 }
