@@ -5,10 +5,19 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {VMahout} from "./VMahout.sol";
 
-// --- Interface IPropertyDataConsensus ---
-interface IPropertyDataConsensus {
-    // --- Events ---
+/**
+ * @title PropertyDataConsensus
+ * @notice Permissionless consensus system for property data with UUPS upgradeability
+ */
+contract PropertyDataConsensus is
+    Initializable,
+    AccessControlUpgradeable,
+    UUPSUpgradeable
+{
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     event DataSubmitted(
         bytes32 indexed propertyHash,
         bytes32 indexed dataGroupHash,
@@ -40,92 +49,14 @@ interface IPropertyDataConsensus {
         bytes32 dataGroupHash;
         bytes32 dataHash;
     }
-
-    // --- Functions ---
-    function minimumConsensus() external view returns (uint256);
-
-    /**
-     * @notice Updates the minimum number of consensus votes required.
-     * @dev Can only be called by an account with ORACLE_MANAGER_ROLE.
-     * Emits a {MinimumConsensusUpdated} event.
-     * @param newMinimumConsensus The new minimum consensus value (must be >= 3).
-     */
-    function updateMinimumConsensus(uint256 newMinimumConsensus) external;
-
-    function submitData(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash,
-        bytes32 dataHash
-    ) external;
-
-    function submitBatchData(DataItem[] calldata items) external;
-
-    function getCurrentFieldDataHash(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash
-    ) external view returns (bytes32);
-
-    function getSubmitterCountForDataHash(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash,
-        bytes32 dataHash
-    ) external view returns (uint256 count);
-
-    function getConsensusHistory(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash
-    ) external view returns (IPropertyDataConsensus.DataVersion[] memory);
-
-    function getParticipantsForConsensusDataHash(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash,
-        bytes32 dataHash
-    ) external view returns (address[] memory);
-
-    function getCurrentConsensusParticipants(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash
-    ) external view returns (address[] memory);
-
-    function hasUserSubmittedDataHash(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash,
-        bytes32 dataHash,
-        address submitter
-    ) external view returns (bool);
-
-    /**
-     * @notice Set the vMahout token address
-     * @param _vMahout The address of the vMahout token
-     */
-    function setVMahout(address _vMahout) external;
-}
-
-interface IERC20Mintable {
-    function mint(address to, uint256 amount) external;
-}
-
-/**
- * @title PropertyDataConsensus
- * @notice Permissionless consensus system for property data with UUPS upgradeability
- */
-contract PropertyDataConsensus is
-    Initializable,
-    AccessControlUpgradeable,
-    UUPSUpgradeable,
-    IPropertyDataConsensus
-{
-    using EnumerableSet for EnumerableSet.AddressSet;
-
     // Minimum number of different addresses required for consensus
-    uint256 public override minimumConsensus;
+    uint256 public minimumConsensus;
 
     mapping(bytes32 => mapping(bytes32 => EnumerableSet.AddressSet))
         private _submissionData;
     mapping(bytes32 => bytes32) private _currentConsensusDataHash;
-    mapping(bytes32 => IPropertyDataConsensus.DataVersion[])
-        private _consensusLog;
-    IERC20Mintable public vMahout;
+    mapping(bytes32 => DataVersion[]) private _consensusLog;
+    VMahout public vMahout;
     mapping(bytes32 => uint256) public consensusRequired;
     bytes32 public constant LEXICON_ORACLE_MANAGER_ROLE =
         keccak256("LEXICON_ORACLE_MANAGER_ROLE");
@@ -180,7 +111,7 @@ contract PropertyDataConsensus is
 
     function updateMinimumConsensus(
         uint256 newMinimumConsensus
-    ) public override onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         if (newMinimumConsensus < 3) {
             revert InvalidMinimumConsensus(newMinimumConsensus);
         }
@@ -193,14 +124,14 @@ contract PropertyDataConsensus is
         bytes32 propertyHash,
         bytes32 dataGroupHash,
         bytes32 dataHash
-    ) public override {
+    ) public {
         _submitDataInternal(propertyHash, dataGroupHash, dataHash);
         if (address(vMahout) != address(0)) {
             vMahout.mint(msg.sender, 0.016 ether);
         }
     }
 
-    function submitBatchData(DataItem[] calldata items) public override {
+    function submitBatchData(DataItem[] calldata items) public {
         uint256 length = items.length;
         if (length == 0) {
             revert EmptyBatchSubmission();
@@ -244,93 +175,12 @@ contract PropertyDataConsensus is
     function getCurrentFieldDataHash(
         bytes32 propertyHash,
         bytes32 dataGroupHash
-    ) public view override returns (bytes32) {
+    ) public view returns (bytes32) {
         bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(
             propertyHash,
             dataGroupHash
         );
         return _currentConsensusDataHash[propertyHashFieldHash];
-    }
-
-    function getSubmitterCountForDataHash(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash,
-        bytes32 dataHash
-    ) public view override returns (uint256 count) {
-        bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(
-            propertyHash,
-            dataGroupHash
-        );
-        return _submissionData[propertyHashFieldHash][dataHash].length();
-    }
-
-    function getConsensusHistory(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash
-    )
-        public
-        view
-        override
-        returns (IPropertyDataConsensus.DataVersion[] memory)
-    {
-        bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(
-            propertyHash,
-            dataGroupHash
-        );
-        return _consensusLog[propertyHashFieldHash];
-    }
-
-    function getParticipantsForConsensusDataHash(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash,
-        bytes32 dataHash
-    ) public view override returns (address[] memory) {
-        bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(
-            propertyHash,
-            dataGroupHash
-        );
-        IPropertyDataConsensus.DataVersion[] storage versions = _consensusLog[
-            propertyHashFieldHash
-        ];
-        for (uint256 i = versions.length; i > 0; i--) {
-            if (versions[i - 1].dataHash == dataHash) {
-                return versions[i - 1].oracles;
-            }
-        }
-        revert NoConsensusReachedForDataHash(propertyHashFieldHash, dataHash);
-    }
-
-    function getCurrentConsensusParticipants(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash
-    ) public view override returns (address[] memory) {
-        bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(
-            propertyHash,
-            dataGroupHash
-        );
-        bytes32 currentDataHash = _currentConsensusDataHash[
-            propertyHashFieldHash
-        ];
-        if (currentDataHash == bytes32(0)) {
-            return new address[](0);
-        }
-        return _submissionData[propertyHashFieldHash][currentDataHash].values();
-    }
-
-    function hasUserSubmittedDataHash(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash,
-        bytes32 dataHash,
-        address submitter
-    ) public view override returns (bool) {
-        bytes32 propertyHashFieldHash = _getPropertyHashFieldHash(
-            propertyHash,
-            dataGroupHash
-        );
-        return
-            _submissionData[propertyHashFieldHash][dataHash].contains(
-                submitter
-            );
     }
 
     function setConsensusRequired(
@@ -370,7 +220,7 @@ contract PropertyDataConsensus is
      */
     function setVMahout(
         address _vMahout
-    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
-        vMahout = IERC20Mintable(_vMahout);
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        vMahout = VMahout(_vMahout);
     }
 }
