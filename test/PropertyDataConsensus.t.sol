@@ -2,9 +2,9 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import {PropertyDataConsensus} from "contracts/PropertyDataConsensus.sol";
+import { PropertyDataConsensus } from "contracts/PropertyDataConsensus.sol";
 import "lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
-import {Upgrades} from "@openzeppelin-upgrades/Upgrades.sol";
+import { Upgrades } from "@openzeppelin-upgrades/Upgrades.sol";
 
 contract PropertyDataConsensusTest is Test {
     PropertyDataConsensus internal propertyDataConsensus;
@@ -17,15 +17,12 @@ contract PropertyDataConsensusTest is Test {
     address internal oracle4 = vm.addr(uint256(keccak256("oracle4")));
 
     bytes32 internal constant DEFAULT_ADMIN_ROLE = 0x00;
-    bytes32 internal constant LEXICON_ORACLE_MANAGER_ROLE =
-        keccak256("LEXICON_ORACLE_MANAGER_ROLE");
+    bytes32 internal constant LEXICON_ORACLE_MANAGER_ROLE = keccak256("LEXICON_ORACLE_MANAGER_ROLE");
 
     bytes32 internal propertyHash1 = sha256("property-123-main-data");
     bytes32 internal dataGroupHash1 = sha256("location-coordinates-group");
-    bytes32 internal dataHash1 =
-        sha256("latitude: 40.7128, longitude: -74.0060");
-    bytes32 internal dataHash2 =
-        sha256("latitude: 40.7589, longitude: -73.9851");
+    bytes32 internal dataHash1 = sha256("latitude: 40.7128, longitude: -74.0060");
+    bytes32 internal dataHash2 = sha256("latitude: 40.7589, longitude: -73.9851");
 
     function setUp() public {
         vm.prank(admin);
@@ -40,16 +37,11 @@ contract PropertyDataConsensusTest is Test {
         assertTrue(propertyDataConsensus.hasRole(DEFAULT_ADMIN_ROLE, admin));
     }
 
-    function test_Initialization_ShouldSetInitialMinimumConsensus()
-        public
-        view
-    {
+    function test_Initialization_ShouldSetInitialMinimumConsensus() public view {
         assertEq(propertyDataConsensus.minimumConsensus(), 3);
     }
 
-    function test_Initialization_ShouldSetMinimumConsensusTo3IfInitializedWithLessThan3()
-        public
-    {
+    function test_Initialization_ShouldSetMinimumConsensusTo3IfInitializedWithLessThan3() public {
         vm.prank(admin);
         address proxy = Upgrades.deployUUPSProxy(
             "PropertyDataConsensus.sol:PropertyDataConsensus",
@@ -76,123 +68,50 @@ contract PropertyDataConsensusTest is Test {
         vm.prank(unprivilegedUser);
         vm.expectRevert(
             abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                unprivilegedUser,
-                DEFAULT_ADMIN_ROLE
+                IAccessControl.AccessControlUnauthorizedAccount.selector, unprivilegedUser, DEFAULT_ADMIN_ROLE
             )
         );
         propertyDataConsensus.updateMinimumConsensus(5);
     }
 
-    function test_UpdateMinimumConsensus_ShouldRevertIfNewMinimumIsLessThan3()
-        public
-    {
+    function test_UpdateMinimumConsensus_ShouldRevertIfNewMinimumIsLessThan3() public {
         vm.prank(admin);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                PropertyDataConsensus.InvalidMinimumConsensus.selector,
-                2
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(PropertyDataConsensus.InvalidMinimumConsensus.selector, 2));
         propertyDataConsensus.updateMinimumConsensus(2);
     }
 
-    function test_ConsensusLogic_ShouldReachConsensusWhenMinimumSubmissionsMet()
-        public
-    {
+    function test_ConsensusLogic_ShouldReachConsensusWhenMinimumSubmissionsMet() public {
         vm.prank(oracle1);
         vm.expectEmit(true, true, true, true);
-        emit PropertyDataConsensus.DataSubmitted(
-            propertyHash1,
-            dataGroupHash1,
-            oracle1,
-            dataHash1
-        );
+        emit PropertyDataConsensus.DataSubmitted(propertyHash1, dataGroupHash1, oracle1, dataHash1);
         vm.expectEmit(true, true, true, false);
-        emit PropertyDataConsensus.ConsensusReached(
-            propertyHash1,
-            dataGroupHash1,
-            dataHash1,
-            new address[](0)
-        );
-        propertyDataConsensus.submitData(
-            propertyHash1,
-            dataGroupHash1,
-            dataHash1
-        );
+        emit PropertyDataConsensus.ConsensusReached(propertyHash1, dataGroupHash1, dataHash1, new address[](0));
+        propertyDataConsensus.submitData(propertyHash1, dataGroupHash1, dataHash1);
 
-        assertEq(
-            propertyDataConsensus.getCurrentFieldDataHash(
-                propertyHash1,
-                dataGroupHash1
-            ),
-            dataHash1
-        );
+        assertEq(propertyDataConsensus.getCurrentFieldDataHash(propertyHash1, dataGroupHash1), dataHash1);
     }
 
-    function test_ConsensusLogic_ShouldUpdateConsensusWhenNewDataHashReachesMinimum()
-        public
-    {
+    function test_ConsensusLogic_ShouldUpdateConsensusWhenNewDataHashReachesMinimum() public {
         vm.prank(oracle1);
-        propertyDataConsensus.submitData(
-            propertyHash1,
-            dataGroupHash1,
-            dataHash1
-        );
+        propertyDataConsensus.submitData(propertyHash1, dataGroupHash1, dataHash1);
 
         vm.prank(oracle3);
         vm.expectEmit(true, true, true, true);
-        emit PropertyDataConsensus.DataSubmitted(
-            propertyHash1,
-            dataGroupHash1,
-            oracle3,
-            dataHash2
-        );
+        emit PropertyDataConsensus.DataSubmitted(propertyHash1, dataGroupHash1, oracle3, dataHash2);
         vm.expectEmit(true, true, true, false);
-        emit PropertyDataConsensus.ConsensusReached(
-            propertyHash1,
-            dataGroupHash1,
-            dataHash2,
-            new address[](0)
-        );
-        propertyDataConsensus.submitData(
-            propertyHash1,
-            dataGroupHash1,
-            dataHash2
-        );
+        emit PropertyDataConsensus.ConsensusReached(propertyHash1, dataGroupHash1, dataHash2, new address[](0));
+        propertyDataConsensus.submitData(propertyHash1, dataGroupHash1, dataHash2);
 
-        assertEq(
-            propertyDataConsensus.getCurrentFieldDataHash(
-                propertyHash1,
-                dataGroupHash1
-            ),
-            dataHash2
-        );
+        assertEq(propertyDataConsensus.getCurrentFieldDataHash(propertyHash1, dataGroupHash1), dataHash2);
     }
 
     function test_ViewFunctions_GetCurrentFieldDataHash() public {
         vm.prank(oracle1);
-        propertyDataConsensus.submitData(
-            propertyHash1,
-            dataGroupHash1,
-            dataHash1
-        );
+        propertyDataConsensus.submitData(propertyHash1, dataGroupHash1, dataHash1);
 
-        assertEq(
-            propertyDataConsensus.getCurrentFieldDataHash(
-                propertyHash1,
-                dataGroupHash1
-            ),
-            dataHash1
-        );
+        assertEq(propertyDataConsensus.getCurrentFieldDataHash(propertyHash1, dataGroupHash1), dataHash1);
         bytes32 propertyHash2 = keccak256("property-789-local-test");
-        assertEq(
-            propertyDataConsensus.getCurrentFieldDataHash(
-                propertyHash2,
-                dataGroupHash1
-            ),
-            bytes32(0)
-        );
+        assertEq(propertyDataConsensus.getCurrentFieldDataHash(propertyHash2, dataGroupHash1), bytes32(0));
     }
 
     function test_ConfigurableConsensus_SetConsensusRequired() public {
@@ -201,11 +120,7 @@ contract PropertyDataConsensusTest is Test {
 
         vm.prank(admin);
         vm.expectEmit(true, true, true, true);
-        emit PropertyDataConsensus.DataGroupConsensusUpdated(
-            dataGroupHash1,
-            0,
-            5
-        );
+        emit PropertyDataConsensus.DataGroupConsensusUpdated(dataGroupHash1, 0, 5);
         propertyDataConsensus.setConsensusRequired(dataGroupHash1, 5);
 
         assertEq(propertyDataConsensus.consensusRequired(dataGroupHash1), 5);
@@ -217,11 +132,7 @@ contract PropertyDataConsensusTest is Test {
         propertyDataConsensus.setConsensusRequired(dataGroupHash1, 5);
 
         vm.expectEmit(true, true, true, true);
-        emit PropertyDataConsensus.DataGroupConsensusUpdated(
-            dataGroupHash1,
-            5,
-            7
-        );
+        emit PropertyDataConsensus.DataGroupConsensusUpdated(dataGroupHash1, 5, 7);
         propertyDataConsensus.setConsensusRequired(dataGroupHash1, 7);
         vm.stopPrank();
     }
@@ -230,17 +141,13 @@ contract PropertyDataConsensusTest is Test {
         vm.prank(unprivilegedUser);
         vm.expectRevert(
             abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                unprivilegedUser,
-                LEXICON_ORACLE_MANAGER_ROLE
+                IAccessControl.AccessControlUnauthorizedAccount.selector, unprivilegedUser, LEXICON_ORACLE_MANAGER_ROLE
             )
         );
         propertyDataConsensus.setConsensusRequired(dataGroupHash1, 5);
     }
 
-    function test_ConfigurableConsensus_ShouldNotReachConsensusWith3SubmissionsWhenThresholdIs4()
-        public
-    {
+    function test_ConfigurableConsensus_ShouldNotReachConsensusWith3SubmissionsWhenThresholdIs4() public {
         vm.startPrank(admin);
         propertyDataConsensus.grantRole(LEXICON_ORACLE_MANAGER_ROLE, admin);
         propertyDataConsensus.setConsensusRequired(dataGroupHash1, 4);
@@ -249,25 +156,13 @@ contract PropertyDataConsensusTest is Test {
         bytes32 propertyHash2 = keccak256("property-456-main-data");
 
         vm.prank(oracle1);
-        propertyDataConsensus.submitData(
-            propertyHash2,
-            dataGroupHash1,
-            dataHash1
-        );
+        propertyDataConsensus.submitData(propertyHash2, dataGroupHash1, dataHash1);
 
         // With immediate update, current field is set on first submission regardless of threshold
-        assertEq(
-            propertyDataConsensus.getCurrentFieldDataHash(
-                propertyHash2,
-                dataGroupHash1
-            ),
-            dataHash1
-        );
+        assertEq(propertyDataConsensus.getCurrentFieldDataHash(propertyHash2, dataGroupHash1), dataHash1);
     }
 
-    function test_ConfigurableConsensus_ShouldReachConsensusWith4SubmissionsWhenThresholdIs4()
-        public
-    {
+    function test_ConfigurableConsensus_ShouldReachConsensusWith4SubmissionsWhenThresholdIs4() public {
         vm.startPrank(admin);
         propertyDataConsensus.grantRole(LEXICON_ORACLE_MANAGER_ROLE, admin);
         propertyDataConsensus.setConsensusRequired(dataGroupHash1, 4);
@@ -277,58 +172,22 @@ contract PropertyDataConsensusTest is Test {
 
         vm.prank(oracle1);
         vm.expectEmit(true, true, true, true);
-        emit PropertyDataConsensus.DataSubmitted(
-            propertyHash3,
-            dataGroupHash1,
-            oracle1,
-            dataHash1
-        );
+        emit PropertyDataConsensus.DataSubmitted(propertyHash3, dataGroupHash1, oracle1, dataHash1);
         vm.expectEmit(true, true, true, false);
-        emit PropertyDataConsensus.ConsensusReached(
-            propertyHash3,
-            dataGroupHash1,
-            dataHash1,
-            new address[](0)
-        );
-        propertyDataConsensus.submitData(
-            propertyHash3,
-            dataGroupHash1,
-            dataHash1
-        );
+        emit PropertyDataConsensus.ConsensusReached(propertyHash3, dataGroupHash1, dataHash1, new address[](0));
+        propertyDataConsensus.submitData(propertyHash3, dataGroupHash1, dataHash1);
 
-        assertEq(
-            propertyDataConsensus.getCurrentFieldDataHash(
-                propertyHash3,
-                dataGroupHash1
-            ),
-            dataHash1
-        );
+        assertEq(propertyDataConsensus.getCurrentFieldDataHash(propertyHash3, dataGroupHash1), dataHash1);
     }
 
-    function test_ConfigurableConsensus_ShouldUseDefaultConsensusForOtherGroups()
-        public
-    {
+    function test_ConfigurableConsensus_ShouldUseDefaultConsensusForOtherGroups() public {
         bytes32 dataGroupHash2 = keccak256("property-details-group");
 
         vm.prank(oracle1);
         vm.expectEmit(true, true, true, true);
-        emit PropertyDataConsensus.DataSubmitted(
-            propertyHash1,
-            dataGroupHash2,
-            oracle1,
-            dataHash1
-        );
+        emit PropertyDataConsensus.DataSubmitted(propertyHash1, dataGroupHash2, oracle1, dataHash1);
         vm.expectEmit(true, true, true, false);
-        emit PropertyDataConsensus.ConsensusReached(
-            propertyHash1,
-            dataGroupHash2,
-            dataHash1,
-            new address[](0)
-        );
-        propertyDataConsensus.submitData(
-            propertyHash1,
-            dataGroupHash2,
-            dataHash1
-        );
+        emit PropertyDataConsensus.ConsensusReached(propertyHash1, dataGroupHash2, dataHash1, new address[](0));
+        propertyDataConsensus.submitData(propertyHash1, dataGroupHash2, dataHash1);
     }
 }
