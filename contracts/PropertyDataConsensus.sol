@@ -121,7 +121,6 @@ contract PropertyDataConsensus is
     {
         _submitDataInternal(propertyHash, dataGroupHash, dataHash);
         if (address(vMahout) != address(0)) {
-            // Reward increased to 1 ETH per submission to incentivize oracle participation
             vMahout.mint(msg.sender, 1 ether);
         }
     }
