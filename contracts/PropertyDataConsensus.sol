@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
-import {VMahout} from "./VMahout.sol";
+import { Initializable } from
+    "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { AccessControlUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import { UUPSUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { EnumerableSet } from
+    "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { EnumerableMap } from
+    "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import { VMahout } from "./VMahout.sol";
 
 /**
  * @title PropertyDataConsensus
@@ -28,9 +33,7 @@ contract PropertyDataConsensus is
     );
     event MinimumConsensusUpdated(uint256 oldValue, uint256 newValue);
     event DataGroupConsensusUpdated(
-        bytes32 indexed dataGroupHash,
-        uint256 oldValue,
-        uint256 newValue
+        bytes32 indexed dataGroupHash, uint256 oldValue, uint256 newValue
     );
     event DataGroupHeartBeat(
         bytes32 indexed propertyHash,
@@ -61,8 +64,8 @@ contract PropertyDataConsensus is
     uint256 public minimumConsensus;
 
     // @deprecated we don't need to store what used to be a submission data anymore
-    mapping(bytes32 => mapping(bytes32 => EnumerableSet.AddressSet))
-        private _submissionData;
+    mapping(bytes32 => mapping(bytes32 => EnumerableSet.AddressSet)) private
+        _submissionData;
     mapping(bytes32 => bytes32) private _currentConsensusDataHash;
 
     // @deprecated we don't store consensus log anymore
@@ -89,7 +92,11 @@ contract PropertyDataConsensus is
     function _getPropertyHashFieldHash(
         bytes32 propertyHash,
         bytes32 dataGroupHash
-    ) internal pure returns (bytes32) {
+    )
+        internal
+        pure
+        returns (bytes32)
+    {
         return keccak256(abi.encodePacked(propertyHash, dataGroupHash));
     }
 
@@ -108,7 +115,9 @@ contract PropertyDataConsensus is
         bytes32 propertyHash,
         bytes32 dataGroupHash,
         bytes32 dataHash
-    ) public {
+    )
+        public
+    {
         _submitDataInternal(propertyHash, dataGroupHash, dataHash);
         if (address(vMahout) != address(0)) {
             vMahout.mint(msg.sender, 1 ether);
@@ -138,17 +147,16 @@ contract PropertyDataConsensus is
         bytes32 propertyHash,
         bytes32 dataGroupHash,
         bytes32 dataHash
-    ) internal {
+    )
+        internal
+    {
         address submitter = msg.sender;
-        (bool exists, bytes32 currentDataHash) = _dataStorage[propertyHash]
-            .tryGet(dataGroupHash);
+        (bool exists, bytes32 currentDataHash) =
+            _dataStorage[propertyHash].tryGet(dataGroupHash);
         if (exists && currentDataHash == dataHash) {
             if (_dataSubmissions[dataHash].oracle == submitter) {
                 emit DataGroupHeartBeat(
-                    propertyHash,
-                    dataGroupHash,
-                    dataHash,
-                    submitter
+                    propertyHash, dataGroupHash, dataHash, submitter
                 );
                 _dataSubmissions[dataHash].timestamp = block.timestamp;
                 return;
@@ -162,22 +170,29 @@ contract PropertyDataConsensus is
     function getCurrentFieldDataHash(
         bytes32 propertyHash,
         bytes32 dataGroupHash
-    ) public view returns (bytes32) {
+    )
+        public
+        view
+        returns (bytes32)
+    {
         return _dataStorage[propertyHash].get(dataGroupHash);
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    { }
 
     /**
      * @notice Sets the vMahout token address used for minting rewards to oracles.
      * @dev Can only be called by an account with DEFAULT_ADMIN_ROLE.
      * @param _vMahout The address of the vMahout token contract.
      */
-    function setVMahout(
-        address _vMahout
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setVMahout(address _vMahout)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         vMahout = VMahout(_vMahout);
     }
 }

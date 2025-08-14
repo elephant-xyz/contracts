@@ -14,13 +14,16 @@ contract DeployScript is Script {
         vm.startBroadcast();
 
         // Deploy VMahout as upgradeable proxy
-        address vmahoutProxy =
-            Upgrades.deployUUPSProxy("VMahout.sol", abi.encodeCall(VMahout.initialize, (deployer, minter, deployer)));
+        address vmahoutProxy = Upgrades.deployUUPSProxy(
+            "VMahout.sol",
+            abi.encodeCall(VMahout.initialize, (deployer, minter, deployer))
+        );
 
         // Deploy PropertyDataConsensus as upgradeable proxy
         // Initialize with minimum consensus of 3 and deployer as admin
         address consensusProxy = Upgrades.deployUUPSProxy(
-            "PropertyDataConsensus.sol", abi.encodeCall(PropertyDataConsensus.initialize, (deployer))
+            "PropertyDataConsensus.sol",
+            abi.encodeCall(PropertyDataConsensus.initialize, (deployer))
         );
 
         vm.stopBroadcast();
@@ -30,7 +33,12 @@ contract DeployScript is Script {
 
         // Write deployment addresses to file for future upgrades
         string memory deployments = string.concat(
-            "VMAHOUT_PROXY=", vm.toString(vmahoutProxy), "\n", "CONSENSUS_PROXY=", vm.toString(consensusProxy), "\n"
+            "VMAHOUT_PROXY=",
+            vm.toString(vmahoutProxy),
+            "\n",
+            "CONSENSUS_PROXY=",
+            vm.toString(consensusProxy),
+            "\n"
         );
         vm.writeFile(".deployments", deployments);
     }
