@@ -5,7 +5,8 @@ import { Script, console } from "forge-std/Script.sol";
 import { PropertyDataConsensus } from "contracts/PropertyDataConsensus.sol";
 
 contract GrantRolesScript is Script {
-    bytes32 public constant LEXICON_ORACLE_MANAGER_ROLE = keccak256("LEXICON_ORACLE_MANAGER_ROLE");
+    bytes32 public constant LEXICON_ORACLE_MANAGER_ROLE =
+        keccak256("LEXICON_ORACLE_MANAGER_ROLE");
 
     function run() external {
         address proxyAddress = vm.envAddress("CONSENSUS_PROXY");

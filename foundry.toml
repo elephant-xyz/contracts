@@ -34,7 +34,7 @@ polygon = { key = "${POLYGONSCAN_API_KEY}" }
 amoy = { key = "${POLYGONSCAN_API_KEY}" }
 
 [fmt]
-line_length = 120
+line_length = 80
 tab_width = 4
 bracket_spacing = true
 int_types = "long"
