@@ -140,9 +140,9 @@ contract PropertyDataConsensus is
         bytes32 dataHash
     ) internal {
         address submitter = msg.sender;
-        (bool exists, bytes32 curerntDataHash) = _dataStorage[propertyHash]
+        (bool exists, bytes32 currentDataHash) = _dataStorage[propertyHash]
             .tryGet(dataGroupHash);
-        if (exists && curerntDataHash == dataHash) {
+        if (exists && currentDataHash == dataHash) {
             if (_dataSubmissions[dataHash].oracle == submitter) {
                 emit DataGroupHeartBeat(
                     propertyHash,
@@ -155,17 +155,16 @@ contract PropertyDataConsensus is
             }
         }
         _dataStorage[propertyHash].set(dataGroupHash, dataHash);
-        _dataSubmissions[dataGroupHash] = DataSubmission(
-            submitter,
-            block.timestamp
-        );
+        _dataSubmissions[dataHash] = DataSubmission(submitter, block.timestamp);
         emit DataSubmitted(propertyHash, dataGroupHash, submitter, dataHash);
     }
 
     function getCurrentFieldDataHash(
         bytes32 propertyHash,
         bytes32 dataGroupHash
-    ) public view returns (bytes32) {}
+    ) public view returns (bytes32) {
+        return _dataStorage[propertyHash].get(dataGroupHash);
+    }
 
     function _authorizeUpgrade(
         address newImplementation
