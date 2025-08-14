@@ -175,4 +175,50 @@ contract PropertyDataConsensusTest is Test {
         vm.expectRevert(PropertyDataConsensus.EmptyBatchSubmission.selector);
         propertyDataConsensus.submitBatchData(items);
     }
+
+    function test_SubmitData_ShouldNotConflictOnSameDataHashInDifferentProperties(
+    )
+        public
+    {
+        // Oracle 1 submits data for property 1
+        vm.prank(oracle1);
+        propertyDataConsensus.submitData(
+            propertyHash1, dataGroupHash1, dataHash1
+        );
+
+        // Oracle 2 submits the same data hash but for property 2
+        bytes32 propertyHash2 = keccak256("property-456-other-data");
+        vm.prank(oracle2);
+        vm.expectEmit(true, true, true, true);
+        emit PropertyDataConsensus.DataSubmitted(
+            propertyHash2, dataGroupHash1, oracle2, dataHash1
+        );
+        propertyDataConsensus.submitData(
+            propertyHash2, dataGroupHash1, dataHash1
+        );
+
+        // Oracle 1 sends a heartbeat for property 1. It should be successful.
+        vm.prank(oracle1);
+        vm.expectEmit(true, true, true, true);
+        emit PropertyDataConsensus.DataGroupHeartBeat(
+            propertyHash1, dataGroupHash1, dataHash1, oracle1
+        );
+        propertyDataConsensus.submitData(
+            propertyHash1, dataGroupHash1, dataHash1
+        );
+
+        // Verify both properties have the correct data
+        assertEq(
+            propertyDataConsensus.getCurrentFieldDataHash(
+                propertyHash1, dataGroupHash1
+            ),
+            dataHash1
+        );
+        assertEq(
+            propertyDataConsensus.getCurrentFieldDataHash(
+                propertyHash2, dataGroupHash1
+            ),
+            dataHash1
+        );
+    }
 }

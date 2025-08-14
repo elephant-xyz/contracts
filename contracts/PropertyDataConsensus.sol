@@ -80,6 +80,7 @@ contract PropertyDataConsensus is
         keccak256("LEXICON_ORACLE_MANAGER_ROLE");
 
     mapping(bytes32 => EnumerableMap.Bytes32ToBytes32Map) private _dataStorage;
+    // Key is composite hash of propertyHash and dataGroupHash to ensure uniqueness
     mapping(bytes32 => DataSubmission) private _dataSubmissions;
 
     error EmptyBatchSubmission();
@@ -120,6 +121,7 @@ contract PropertyDataConsensus is
     {
         _submitDataInternal(propertyHash, dataGroupHash, dataHash);
         if (address(vMahout) != address(0)) {
+            // Reward increased to 1 ETH per submission to incentivize oracle participation
             vMahout.mint(msg.sender, 1 ether);
         }
     }
@@ -151,19 +153,22 @@ contract PropertyDataConsensus is
         internal
     {
         address submitter = msg.sender;
+        bytes32 propertyDataHash =
+            _getPropertyHashFieldHash(propertyHash, dataHash);
         (bool exists, bytes32 currentDataHash) =
             _dataStorage[propertyHash].tryGet(dataGroupHash);
         if (exists && currentDataHash == dataHash) {
-            if (_dataSubmissions[dataHash].oracle == submitter) {
+            if (_dataSubmissions[propertyDataHash].oracle == submitter) {
                 emit DataGroupHeartBeat(
                     propertyHash, dataGroupHash, dataHash, submitter
                 );
-                _dataSubmissions[dataHash].timestamp = block.timestamp;
+                _dataSubmissions[propertyDataHash].timestamp = block.timestamp;
                 return;
             }
         }
         _dataStorage[propertyHash].set(dataGroupHash, dataHash);
-        _dataSubmissions[dataHash] = DataSubmission(submitter, block.timestamp);
+        _dataSubmissions[propertyDataHash] =
+            DataSubmission(submitter, block.timestamp);
         emit DataSubmitted(propertyHash, dataGroupHash, submitter, dataHash);
     }
 
