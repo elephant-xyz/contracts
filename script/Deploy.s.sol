@@ -28,6 +28,12 @@ contract DeployScript is Script {
 
         vm.stopBroadcast();
 
+        VMahout vmahout = VMahout(vmahoutProxy);
+
+        vm.startBroadcast();
+        vmahout.grantRole(vmahout.MINTER_ROLE(), consensusProxy);
+        vm.stopBroadcast();
+
         console.log("VMahout proxy deployed at:", vmahoutProxy);
         console.log("PropertyDataConsensus proxy deployed at:", consensusProxy);
 
