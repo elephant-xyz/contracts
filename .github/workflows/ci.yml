@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    name: Build & Test
+  build-and-deploy:
+    name: Build & Deploy (deterministic)
     runs-on: ubuntu-latest
 
     env:
@@ -45,23 +45,8 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           aws-region: "us-east-1"
 
-      - name: Build Reference Contracts
-        run: just build-reference
+      - name: Build
+        run: just build
 
-      - name: Run build and checks
-        run: just check
-
-      - name: Get KMS Address
-        run: |
-          echo "KMS_ADDRESS=$(cast wallet address --aws)" >> $GITHUB_ENV
-
-      - name: Upgrade PropertyDataConsensus (Dry Run)
-        run: just upgrade-consensus-prod polygon
-        env:
-          CONSENSUS_PROXY: "0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18"
-
-      - name: Upgrade vMahout (Dry Run)
-        run: just upgrade-vmahout-prod polygon
-        env:
-          VMAHOUT_PROXY: "0x940a9bb3ffd84EB20A69A827F91AeDB823843368"
-          MINTER_ADDRESS: "0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18"
+      - name: Deploy (deterministic, create2)
+        run: just deploy

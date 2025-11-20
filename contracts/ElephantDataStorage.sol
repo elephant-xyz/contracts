@@ -6,9 +6,9 @@ import { Initializable } from
 import { UUPSUpgradeable } from
     "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-/// @notice Placeholder upgradable contract for the vote token (vMahout).
-/// @dev Implementation intentionally left empty until token logic is defined.
-contract VMahout is Initializable, UUPSUpgradeable {
+/// @notice Placeholder upgradable contract for Elephant data storage.
+/// @dev Implementation intentionally left empty until storage schema is defined.
+contract ElephantDataStorage is Initializable, UUPSUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
