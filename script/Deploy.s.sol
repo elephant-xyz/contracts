@@ -22,21 +22,24 @@ contract DeployScript is Script {
     function run() external {
         vm.startBroadcast();
 
+        // Default owner = broadcasting key; set OWNER env var to override.
+        address owner = _getOwner();
+
         address vImpl = address(new VMahout());
         address mImpl = address(new Mahout());
         address sImpl = address(new ElephantDataStorage());
 
         address vProxy = _deployDeterministic(
-            vImpl, abi.encodeCall(VMahout.initialize, ()), SALT_VMAHOUT
+            vImpl, abi.encodeCall(VMahout.initialize, (owner)), SALT_VMAHOUT
         );
 
         address mProxy = _deployDeterministic(
-            mImpl, abi.encodeCall(Mahout.initialize, ()), SALT_MAHOUT
+            mImpl, abi.encodeCall(Mahout.initialize, (owner)), SALT_MAHOUT
         );
 
         address storageProxy = _deployDeterministic(
             sImpl,
-            abi.encodeCall(ElephantDataStorage.initialize, ()),
+            abi.encodeCall(ElephantDataStorage.initialize, (owner)),
             SALT_STORAGE
         );
 
@@ -57,6 +60,12 @@ contract DeployScript is Script {
             vm.toString(storageProxy),
             "\n"
         );
+    }
+
+    function _getOwner() internal view returns (address) {
+        // forge-std returns zero if env var is unset; fallback to tx.origin.
+        address envOwner = vm.envOr("OWNER", address(0));
+        return envOwner == address(0) ? tx.origin : envOwner;
     }
 
     function _deployDeterministic(
