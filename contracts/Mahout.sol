@@ -11,9 +11,9 @@ import {
     UUPSUpgradeable
 } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-/// @notice Placeholder upgradable contract for the vote token (vMahout).
+/// @notice Placeholder upgradable contract for the main ERC20 (Mahout).
 /// @dev Implementation intentionally left empty until token logic is defined.
-contract VMahout is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract Mahout is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();

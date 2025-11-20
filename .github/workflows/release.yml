@@ -41,23 +41,8 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           aws-region: "us-east-1"
 
-      - name: Build Reference Contracts
-        run: just build-reference
-
-      - name: Build Contracts
+      - name: Build
         run: just build
 
-      - name: Get KMS Address
-        run: |
-          echo "KMS_ADDRESS=$(cast wallet address --aws)" >> $GITHUB_ENV
-
-      - name: Upgrade PropertyDataConsensus
-        run: just upgrade-consensus-prod polygon
-        env:
-          CONSENSUS_PROXY: "0x525E59e4DE2B51f52B9e30745a513E407652AB7c"
-
-      - name: Upgrade vMahout
-        run: just upgrade-vmahout-prod polygon
-        env:
-          VMAHOUT_PROXY: "0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18"
-          MINTER_ADDRESS: "0x525E59e4DE2B51f52B9e30745a513E407652AB7c"
+      - name: Deploy (mainnet deterministic, create2)
+        run: just deploy
