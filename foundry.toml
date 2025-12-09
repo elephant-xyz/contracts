@@ -23,8 +23,6 @@ cbor_metadata = false
 fs_permissions = [
   { access = "read", path = "./out" },
   { access = "read", path = "." },
-  { access = "read", path = "./deploypents" },
-  { access = "write", path = "./deployments" }
 ]
 
 [rpc_endpoints]
