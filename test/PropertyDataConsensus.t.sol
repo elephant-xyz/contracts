@@ -102,8 +102,7 @@ contract PropertyDataConsensusTest is Test {
         );
     }
 
-    function test_SubmitData_ShouldEmitHeartBeatWhenSameOracleResubmitsSameData(
-    )
+    function test_SubmitData_ShouldEmitHeartBeatWhenSameOracleResubmitsSameData()
         public
     {
         vm.prank(oracle1);
@@ -176,8 +175,7 @@ contract PropertyDataConsensusTest is Test {
         propertyDataConsensus.submitBatchData(items);
     }
 
-    function test_SubmitData_ShouldNotConflictOnSameDataHashInDifferentProperties(
-    )
+    function test_SubmitData_ShouldNotConflictOnSameDataHashInDifferentProperties()
         public
     {
         // Oracle 1 submits data for property 1

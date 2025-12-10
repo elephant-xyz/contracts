@@ -4,10 +4,12 @@ pragma solidity ^0.8.28;
 import { Test, console } from "forge-std/Test.sol";
 import { VMahout } from "contracts/VMahout.sol";
 import { Upgrades, Options } from "@openzeppelin-upgrades/Upgrades.sol";
-import { AccessControlUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { IAccessControl } from
-    "@openzeppelin/contracts/access/IAccessControl.sol";
+import {
+    AccessControlUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {
+    IAccessControl
+} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 contract VMahoutTest is Test {
     VMahout public vMahout;
