@@ -68,10 +68,10 @@ contract PropertyDataConsensusTest is Test {
 
         assertEq(vMahout.balanceOf(oracle1), 1 ether);
 
-        (address oracle,, bytes32 storedHash) =
-            _loadDataCell(propertyHash1, dataGroupHash1);
-        assertEq(oracle, oracle1);
-        assertEq(storedHash, dataHash1);
+        PropertyDataConsensus.DataCell memory dataCell =
+            propertyDataConsensus.getDataCell(propertyHash1, dataGroupHash1);
+        assertEq(dataCell.oracle, oracle1);
+        assertEq(dataCell.dataHash, dataHash1);
     }
 
     function test_SubmitData_ShouldHeartbeatAndNotMintForSameOracle() public {
@@ -80,8 +80,9 @@ contract PropertyDataConsensusTest is Test {
             propertyHash1, dataGroupHash1, dataHash1
         );
 
-        (, uint256 firstTimestamp,) =
-            _loadDataCell(propertyHash1, dataGroupHash1);
+        uint256 firstTimestamp =
+            propertyDataConsensus.getDataCell(propertyHash1, dataGroupHash1)
+                .timestamp;
         vm.warp(block.timestamp + 10);
 
         vm.prank(oracle1);
@@ -93,10 +94,10 @@ contract PropertyDataConsensusTest is Test {
             propertyHash1, dataGroupHash1, dataHash1
         );
 
-        (address oracle, uint256 secondTimestamp,) =
-            _loadDataCell(propertyHash1, dataGroupHash1);
-        assertEq(oracle, oracle1);
-        assertGt(secondTimestamp, firstTimestamp);
+        PropertyDataConsensus.DataCell memory dataCell =
+            propertyDataConsensus.getDataCell(propertyHash1, dataGroupHash1);
+        assertEq(dataCell.oracle, oracle1);
+        assertGt(dataCell.timestamp, firstTimestamp);
         assertEq(vMahout.balanceOf(oracle1), 1 ether);
         assertEq(vMahout.totalSupply(), 1 ether);
     }
@@ -122,8 +123,9 @@ contract PropertyDataConsensusTest is Test {
             propertyHash1, dataGroupHash1, dataHash1
         );
 
-        (address oracle,,) = _loadDataCell(propertyHash1, dataGroupHash1);
-        assertEq(oracle, oracle1);
+        PropertyDataConsensus.DataCell memory dataCell =
+            propertyDataConsensus.getDataCell(propertyHash1, dataGroupHash1);
+        assertEq(dataCell.oracle, oracle1);
         assertEq(vMahout.balanceOf(oracle1), 1 ether);
         assertEq(vMahout.balanceOf(oracle2), 0);
     }
@@ -133,8 +135,9 @@ contract PropertyDataConsensusTest is Test {
         propertyDataConsensus.submitData(
             propertyHash1, dataGroupHash1, dataHash1
         );
-        (, uint256 firstTimestamp,) =
-            _loadDataCell(propertyHash1, dataGroupHash1);
+        uint256 firstTimestamp =
+            propertyDataConsensus.getDataCell(propertyHash1, dataGroupHash1)
+                .timestamp;
 
         vm.warp(block.timestamp + LOCK_DURATION + 1);
 
@@ -147,10 +150,10 @@ contract PropertyDataConsensusTest is Test {
             propertyHash1, dataGroupHash1, dataHash1
         );
 
-        (address oracle, uint256 secondTimestamp,) =
-            _loadDataCell(propertyHash1, dataGroupHash1);
-        assertEq(oracle, oracle2);
-        assertGt(secondTimestamp, firstTimestamp);
+        PropertyDataConsensus.DataCell memory dataCell =
+            propertyDataConsensus.getDataCell(propertyHash1, dataGroupHash1);
+        assertEq(dataCell.oracle, oracle2);
+        assertGt(dataCell.timestamp, firstTimestamp);
 
         assertEq(vMahout.balanceOf(oracle1), 0);
         assertEq(vMahout.balanceOf(oracle2), 1 ether);
@@ -172,10 +175,10 @@ contract PropertyDataConsensusTest is Test {
             propertyHash1, dataGroupHash1, dataHash2
         );
 
-        (address oracle,, bytes32 storedHash) =
-            _loadDataCell(propertyHash1, dataGroupHash1);
-        assertEq(oracle, oracle1);
-        assertEq(storedHash, dataHash2);
+        PropertyDataConsensus.DataCell memory dataCell =
+            propertyDataConsensus.getDataCell(propertyHash1, dataGroupHash1);
+        assertEq(dataCell.oracle, oracle1);
+        assertEq(dataCell.dataHash, dataHash2);
         assertEq(vMahout.balanceOf(oracle1), 2 ether);
         assertEq(vMahout.totalSupply(), 2 ether);
     }
@@ -229,28 +232,4 @@ contract PropertyDataConsensusTest is Test {
         assertEq(vMahout.totalSupply(), 0);
     }
 
-    function _loadDataCell(
-        bytes32 propertyHash,
-        bytes32 dataGroupHash
-    )
-        internal
-        view
-        returns (address oracle, uint256 timestamp, bytes32 dataHash)
-    {
-        bytes32 identifier =
-            keccak256(abi.encodePacked(propertyHash, dataGroupHash));
-        bytes32 baseSlot = keccak256(abi.encode(identifier, uint256(8))); // s_dataCells slot is 8
-
-        oracle = address(
-            uint160(uint256(vm.load(address(propertyDataConsensus), baseSlot)))
-        );
-        timestamp = uint256(
-            vm.load(
-                address(propertyDataConsensus), bytes32(uint256(baseSlot) + 1)
-            )
-        );
-        dataHash = vm.load(
-            address(propertyDataConsensus), bytes32(uint256(baseSlot) + 2)
-        );
-    }
 }
