@@ -140,17 +140,27 @@ contract PropertyDataConsensus is
     )
         public
     {
-        bool isNew = _submitDataInternal(propertyHash, dataGroupHash, dataHash);
-        if (isNew && (address(vMahout) != address(0))) {
-            vMahout.mint(msg.sender, 1 ether);
+        (bool isNew, address penalizedOracle) =
+            _submitDataInternal(propertyHash, dataGroupHash, dataHash);
+
+        if (address(vMahout) != address(0)) {
+            if (penalizedOracle != address(0)) {
+                vMahout.burn(penalizedOracle, 1 ether);
+            }
+            if (isNew) {
+                vMahout.mint(msg.sender, 1 ether);
+            }
         }
     }
 
     function submitBatchData(DataItem[] calldata items) public {
         uint256 length = items.length;
         uint256 total = 0;
+        address[] memory burnAccounts = new address[](length);
+        uint256[] memory burnAmounts = new uint256[](length);
+        uint256 burnListLength = 0;
         for (uint256 i = 0; i < length;) {
-            bool isNew = _submitDataInternal(
+            (bool isNew, address penalizedOracle) = _submitDataInternal(
                 items[i].propertyHash, items[i].dataGroupHash, items[i].dataHash
             );
             unchecked {
@@ -159,9 +169,35 @@ contract PropertyDataConsensus is
                     total += 1;
                 }
             }
+
+            if (penalizedOracle != address(0)) {
+                uint256 j = 0;
+                for (; j < burnListLength; ++j) {
+                    if (burnAccounts[j] == penalizedOracle) {
+                        burnAmounts[j] += 1 ether;
+                        break;
+                    }
+                }
+                if (j == burnListLength) {
+                    burnAccounts[burnListLength] = penalizedOracle;
+                    burnAmounts[burnListLength] = 1 ether;
+                    unchecked {
+                        burnListLength++;
+                    }
+                }
+            }
         }
         if (address(vMahout) != address(0)) {
-            vMahout.mint(msg.sender, total * 1 ether);
+            for (uint256 k = 0; k < burnListLength;) {
+                vMahout.burn(burnAccounts[k], burnAmounts[k]);
+                unchecked {
+                    ++k;
+                }
+            }
+
+            if (total > 0) {
+                vMahout.mint(msg.sender, total * 1 ether);
+            }
         }
     }
 
@@ -171,7 +207,7 @@ contract PropertyDataConsensus is
         bytes32 dataHash
     )
         private
-        returns (bool isNew)
+        returns (bool isNew, address penalizedOracle)
     {
         address submitter = msg.sender;
         bytes32 identifier =
@@ -186,14 +222,14 @@ contract PropertyDataConsensus is
                     propertyHash, dataGroupHash, submitter, dataHash
                 );
                 s_dataCells[identifier].timestamp = block.timestamp;
-                return false;
+                return (false, address(0));
             } else {
                 if (block.timestamp - currentDataCell.timestamp < SEVEN_DAYS) {
                     revert ElephantProtocol__DataCellLocked(
                         propertyHash, dataGroupHash, currentDataCell.oracle
                     );
                 }
-                vMahout.burn(currentDataCell.oracle, 1 ether);
+                penalizedOracle = currentDataCell.oracle;
                 emit DataGroupHeartBeat(
                     propertyHash, dataGroupHash, submitter, dataHash
                 );
@@ -205,7 +241,7 @@ contract PropertyDataConsensus is
             oracle: submitter, timestamp: block.timestamp, dataHash: dataHash
         });
 
-        return true;
+        return (true, penalizedOracle);
     }
 
     function _getFromLegacyStorage(
@@ -231,8 +267,6 @@ contract PropertyDataConsensus is
             dataHash: currentDataHash
         });
     }
-
-    function _updateDataStorage() private { }
 
     function getDataCell(
         bytes32 propertyHash,
