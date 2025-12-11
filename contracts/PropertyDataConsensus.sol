@@ -234,15 +234,20 @@ contract PropertyDataConsensus is
 
     function _updateDataStorage() private { }
 
-    function getCurrentFieldDataHash(
+    function getDataCell(
         bytes32 propertyHash,
         bytes32 dataGroupHash
     )
         public
         view
-        returns (bytes32)
+        returns (DataCell memory)
     {
-        return s_dataStorage[propertyHash].get(dataGroupHash);
+        DataCell memory dataCell =
+            s_dataCells[_getPropertyHashFieldHash(propertyHash, dataGroupHash)];
+        if (dataCell.oracle == address(0)) {
+            dataCell = _getFromLegacyStorage(propertyHash, dataGroupHash);
+        }
+        return dataCell;
     }
 
     function _authorizeUpgrade(address newImplementation)

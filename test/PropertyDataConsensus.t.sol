@@ -22,13 +22,13 @@ contract PropertyDataConsensusTest is Test {
         keccak256("LEXICON_ORACLE_MANAGER_ROLE");
     uint256 internal constant LOCK_DURATION = 7 * 24 * 60;
 
-    bytes32 internal propertyHash1 = sha256("property-123-main-data");
+    bytes32 internal propertyHash1 = keccak256("property-123-main-data");
     bytes32 internal propertyHash2 = keccak256("property-456");
-    bytes32 internal dataGroupHash1 = sha256("location-coordinates-group");
+    bytes32 internal dataGroupHash1 = keccak256("location-coordinates-group");
     bytes32 internal dataHash1 =
-        sha256("latitude: 40.7128, longitude: -74.0060");
+        keccak256("latitude: 40.7128, longitude: -74.0060");
     bytes32 internal dataHash2 =
-        sha256("latitude: 40.7589, longitude: -73.9851");
+        keccak256("latitude: 40.7589, longitude: -73.9851");
 
     function setUp() public {
         vm.prank(admin);
@@ -41,7 +41,8 @@ contract PropertyDataConsensusTest is Test {
         bytes memory vMahoutData = abi.encodeWithSignature(
             "initialize(address,address,address)", admin, admin, admin
         );
-        address vMahoutProxy = Upgrades.deployUUPSProxy("VMahout.sol", vMahoutData);
+        address vMahoutProxy =
+            Upgrades.deployUUPSProxy("VMahout.sol", vMahoutData);
         vMahout = VMahout(vMahoutProxy);
 
         bytes32 minterRole = vMahout.MINTER_ROLE();
@@ -228,28 +229,28 @@ contract PropertyDataConsensusTest is Test {
         assertEq(vMahout.totalSupply(), 0);
     }
 
-    function _loadDataCell(bytes32 propertyHash, bytes32 dataGroupHash)
+    function _loadDataCell(
+        bytes32 propertyHash,
+        bytes32 dataGroupHash
+    )
         internal
         view
         returns (address oracle, uint256 timestamp, bytes32 dataHash)
     {
         bytes32 identifier =
             keccak256(abi.encodePacked(propertyHash, dataGroupHash));
-        bytes32 baseSlot =
-            keccak256(abi.encode(identifier, uint256(8))); // s_dataCells slot is 8
+        bytes32 baseSlot = keccak256(abi.encode(identifier, uint256(8))); // s_dataCells slot is 8
 
         oracle = address(
             uint160(uint256(vm.load(address(propertyDataConsensus), baseSlot)))
         );
         timestamp = uint256(
             vm.load(
-                address(propertyDataConsensus),
-                bytes32(uint256(baseSlot) + 1)
+                address(propertyDataConsensus), bytes32(uint256(baseSlot) + 1)
             )
         );
         dataHash = vm.load(
-            address(propertyDataConsensus),
-            bytes32(uint256(baseSlot) + 2)
+            address(propertyDataConsensus), bytes32(uint256(baseSlot) + 2)
         );
     }
 }
