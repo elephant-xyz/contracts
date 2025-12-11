@@ -95,10 +95,10 @@ contract PropertyDataConsensus is
     uint256 private constant SEVEN_DAYS = 7 days;
 
     // @deprecated
-    mapping(bytes32 => EnumerableMap.Bytes32ToBytes32Map) private s_dataStorage;
+    mapping(bytes32 => EnumerableMap.Bytes32ToBytes32Map) private _dataStorage;
     // Key is composite hash of propertyHash and dataGroupHash to ensure uniqueness
     // @deprecated
-    mapping(bytes32 => DataSubmission) private s_dataSubmissions;
+    mapping(bytes32 => DataSubmission) private _dataSubmissions;
 
     mapping(bytes32 => DataCell) private s_dataCells;
 
@@ -260,14 +260,14 @@ contract PropertyDataConsensus is
         returns (DataCell memory)
     {
         (bool exists, bytes32 currentDataHash) =
-            s_dataStorage[propertyHash].tryGet(dataGroupHash);
+            _dataStorage[propertyHash].tryGet(dataGroupHash);
         if (!exists) {
             return DataCell(address(0), 0, bytes32(0));
         }
         bytes32 propertyDataHash =
             _getPropertyHashFieldHash(propertyHash, currentDataHash);
         DataSubmission storage dataSubmision =
-            s_dataSubmissions[propertyDataHash];
+            _dataSubmissions[propertyDataHash];
         return DataCell({
             oracle: dataSubmision.oracle,
             timestamp: uint64(dataSubmision.timestamp),
