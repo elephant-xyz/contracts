@@ -291,6 +291,31 @@ contract PropertyDataConsensusTest is Test {
         assertEq(dataCell.timestamp, legacyTimestamp);
     }
 
+    function test_SubmitData_ShouldPersistLegacyCellOnHeartbeat() public {
+        uint256 legacyTimestamp = 123_456;
+        _writeLegacyData(
+            propertyHash1, dataGroupHash1, dataHash1, oracle3, legacyTimestamp
+        );
+
+        vm.warp(block.timestamp + 10);
+
+        vm.prank(oracle3);
+        vm.expectEmit(true, true, true, true);
+        emit PropertyDataConsensus.DataGroupHeartBeat(
+            propertyHash1, dataGroupHash1, oracle3, dataHash1
+        );
+        propertyDataConsensus.submitData(
+            propertyHash1, dataGroupHash1, dataHash1
+        );
+
+        PropertyDataConsensus.DataCell memory dataCell =
+            propertyDataConsensus.getDataCell(propertyHash1, dataGroupHash1);
+        assertEq(dataCell.oracle, oracle3);
+        assertEq(dataCell.dataHash, dataHash1);
+        assertEq(dataCell.timestamp, block.timestamp);
+        assertEq(vMahout.balanceOf(oracle3), 0);
+    }
+
     function _writeLegacyData(
         bytes32 propertyHash,
         bytes32 dataGroupHash,

@@ -222,7 +222,11 @@ contract PropertyDataConsensus is
                 emit DataGroupHeartBeat(
                     propertyHash, dataGroupHash, submitter, dataHash
                 );
-                s_dataCells[identifier].timestamp = uint64(block.timestamp);
+                s_dataCells[identifier] = DataCell({
+                    oracle: submitter,
+                    timestamp: uint64(block.timestamp),
+                    dataHash: dataHash
+                });
                 return (false, address(0));
             } else {
                 if (block.timestamp - currentDataCell.timestamp < SEVEN_DAYS) {
