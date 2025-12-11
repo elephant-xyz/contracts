@@ -232,4 +232,102 @@ contract PropertyDataConsensusTest is Test {
         assertEq(vMahout.totalSupply(), 0);
     }
 
+    function test_VMahout_ShouldBeNonTransferable() public {
+        vm.expectRevert(VMahout.VMahout__TransferNotAllowed.selector);
+        vMahout.transfer(unprivilegedUser, 1 ether);
+
+        vm.expectRevert(VMahout.VMahout__TransferNotAllowed.selector);
+        vMahout.approve(unprivilegedUser, 1 ether);
+
+        vm.prank(unprivilegedUser);
+        vm.expectRevert(VMahout.VMahout__TransferNotAllowed.selector);
+        vMahout.transferFrom(unprivilegedUser, admin, 1 ether);
+    }
+
+    function test_SubmitData_ShouldExtendLockOnHeartbeat() public {
+        vm.prank(oracle1);
+        propertyDataConsensus.submitData(
+            propertyHash1, dataGroupHash1, dataHash1
+        );
+
+        vm.warp(block.timestamp + LOCK_DURATION - 1);
+
+        vm.prank(oracle1);
+        propertyDataConsensus.submitData(
+            propertyHash1, dataGroupHash1, dataHash1
+        );
+
+        vm.warp(block.timestamp + LOCK_DURATION - 1);
+
+        vm.prank(oracle2);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                PropertyDataConsensus.ElephantProtocol__DataCellLocked.selector,
+                propertyHash1,
+                dataGroupHash1,
+                oracle1
+            )
+        );
+        propertyDataConsensus.submitData(
+            propertyHash1, dataGroupHash1, dataHash1
+        );
+
+        PropertyDataConsensus.DataCell memory dataCell =
+            propertyDataConsensus.getDataCell(propertyHash1, dataGroupHash1);
+        assertEq(dataCell.oracle, oracle1);
+        assertEq(vMahout.balanceOf(oracle1), 1 ether);
+    }
+
+    function test_LegacyData_ShouldBeDiscoverableViaGetDataCell() public {
+        uint256 legacyTimestamp = 123456;
+        _writeLegacyData(
+            propertyHash1, dataGroupHash1, dataHash1, oracle3, legacyTimestamp
+        );
+
+        PropertyDataConsensus.DataCell memory dataCell =
+            propertyDataConsensus.getDataCell(propertyHash1, dataGroupHash1);
+        assertEq(dataCell.oracle, oracle3);
+        assertEq(dataCell.dataHash, dataHash1);
+        assertEq(dataCell.timestamp, legacyTimestamp);
+    }
+
+    function _writeLegacyData(
+        bytes32 propertyHash,
+        bytes32 dataGroupHash,
+        bytes32 dataHash,
+        address oracle,
+        uint256 timestamp
+    ) internal {
+        bytes32 storageBase =
+            keccak256(abi.encode(propertyHash, uint256(6))); // s_dataStorage slot
+
+        // EnumerableSet.Bytes32Set bookkeeping
+        vm.store(address(propertyDataConsensus), storageBase, bytes32(uint256(1)));
+        bytes32 arraySlot = keccak256(abi.encode(storageBase));
+        vm.store(address(propertyDataConsensus), arraySlot, dataGroupHash);
+        bytes32 indexSlot =
+            keccak256(abi.encode(dataGroupHash, uint256(storageBase) + 1));
+        vm.store(address(propertyDataConsensus), indexSlot, bytes32(uint256(1)));
+
+        // EnumerableMap Bytes32ToBytes32Map values mapping
+        bytes32 valuesSlot =
+            keccak256(abi.encode(dataGroupHash, uint256(storageBase) + 2));
+        vm.store(address(propertyDataConsensus), valuesSlot, dataHash);
+
+        // s_dataSubmissions entry
+        bytes32 propertyDataHash =
+            keccak256(abi.encodePacked(propertyHash, dataHash));
+        bytes32 submissionBase =
+            keccak256(abi.encode(propertyDataHash, uint256(7))); // s_dataSubmissions slot
+        vm.store(
+            address(propertyDataConsensus),
+            submissionBase,
+            bytes32(uint256(uint160(oracle)))
+        );
+        vm.store(
+            address(propertyDataConsensus),
+            bytes32(uint256(submissionBase) + 1),
+            bytes32(timestamp)
+        );
+    }
 }
