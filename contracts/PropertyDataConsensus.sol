@@ -16,6 +16,7 @@ import {
 import {
     EnumerableMap
 } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import { Hashes } from "@openzeppelin/contracts/utils/cryptography/Hashes.sol";
 import { VMahout } from "./VMahout.sol";
 
 /**
@@ -119,7 +120,7 @@ contract PropertyDataConsensus is
         pure
         returns (bytes32)
     {
-        return keccak256(abi.encodePacked(propertyHash, dataGroupHash));
+        return Hashes.efficientKeccak256(propertyHash, dataGroupHash);
     }
 
     /**
