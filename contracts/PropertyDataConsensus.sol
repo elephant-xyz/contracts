@@ -69,7 +69,7 @@ contract PropertyDataConsensus is
 
     struct DataCell {
         address oracle;
-        uint256 timestamp;
+        uint64 timestamp;
         bytes32 dataHash;
     }
 
@@ -91,7 +91,7 @@ contract PropertyDataConsensus is
 
     bytes32 public constant LEXICON_ORACLE_MANAGER_ROLE =
         keccak256("LEXICON_ORACLE_MANAGER_ROLE");
-    uint256 private constant SEVEN_DAYS = 7 * 24 * 60;
+    uint256 private constant SEVEN_DAYS = 7 days;
 
     // @deprecated
     mapping(bytes32 => EnumerableMap.Bytes32ToBytes32Map) private s_dataStorage;
@@ -138,7 +138,7 @@ contract PropertyDataConsensus is
         bytes32 dataGroupHash,
         bytes32 dataHash
     )
-        public
+        external
     {
         (bool isNew, address penalizedOracle) =
             _submitDataInternal(propertyHash, dataGroupHash, dataHash);
@@ -153,7 +153,7 @@ contract PropertyDataConsensus is
         }
     }
 
-    function submitBatchData(DataItem[] calldata items) public {
+    function submitBatchData(DataItem[] calldata items) external {
         uint256 length = items.length;
         uint256 total = 0;
         address[] memory burnAccounts = new address[](length);
@@ -221,7 +221,7 @@ contract PropertyDataConsensus is
                 emit DataGroupHeartBeat(
                     propertyHash, dataGroupHash, submitter, dataHash
                 );
-                s_dataCells[identifier].timestamp = block.timestamp;
+                s_dataCells[identifier].timestamp = uint64(block.timestamp);
                 return (false, address(0));
             } else {
                 if (block.timestamp - currentDataCell.timestamp < SEVEN_DAYS) {
@@ -238,7 +238,9 @@ contract PropertyDataConsensus is
             emit DataSubmitted(propertyHash, dataGroupHash, submitter, dataHash);
         }
         s_dataCells[identifier] = DataCell({
-            oracle: submitter, timestamp: block.timestamp, dataHash: dataHash
+            oracle: submitter,
+            timestamp: uint64(block.timestamp),
+            dataHash: dataHash
         });
 
         return (true, penalizedOracle);
@@ -263,7 +265,7 @@ contract PropertyDataConsensus is
             s_dataSubmissions[propertyDataHash];
         return DataCell({
             oracle: dataSubmision.oracle,
-            timestamp: dataSubmision.timestamp,
+            timestamp: uint64(dataSubmision.timestamp),
             dataHash: currentDataHash
         });
     }

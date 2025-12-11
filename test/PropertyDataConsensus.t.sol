@@ -20,7 +20,7 @@ contract PropertyDataConsensusTest is Test {
     bytes32 internal constant DEFAULT_ADMIN_ROLE = 0x00;
     bytes32 internal constant LEXICON_ORACLE_MANAGER_ROLE =
         keccak256("LEXICON_ORACLE_MANAGER_ROLE");
-    uint256 internal constant LOCK_DURATION = 7 * 24 * 60;
+    uint256 internal constant LOCK_DURATION = 7 days;
 
     bytes32 internal propertyHash1 = keccak256("property-123-main-data");
     bytes32 internal propertyHash2 = keccak256("property-456");
@@ -82,7 +82,7 @@ contract PropertyDataConsensusTest is Test {
 
         uint256 firstTimestamp =
             propertyDataConsensus.getDataCell(propertyHash1, dataGroupHash1)
-                .timestamp;
+        .timestamp;
         vm.warp(block.timestamp + 10);
 
         vm.prank(oracle1);
@@ -137,7 +137,7 @@ contract PropertyDataConsensusTest is Test {
         );
         uint256 firstTimestamp =
             propertyDataConsensus.getDataCell(propertyHash1, dataGroupHash1)
-                .timestamp;
+        .timestamp;
 
         vm.warp(block.timestamp + LOCK_DURATION + 1);
 
@@ -279,7 +279,7 @@ contract PropertyDataConsensusTest is Test {
     }
 
     function test_LegacyData_ShouldBeDiscoverableViaGetDataCell() public {
-        uint256 legacyTimestamp = 123456;
+        uint256 legacyTimestamp = 123_456;
         _writeLegacyData(
             propertyHash1, dataGroupHash1, dataHash1, oracle3, legacyTimestamp
         );
@@ -297,12 +297,15 @@ contract PropertyDataConsensusTest is Test {
         bytes32 dataHash,
         address oracle,
         uint256 timestamp
-    ) internal {
-        bytes32 storageBase =
-            keccak256(abi.encode(propertyHash, uint256(6))); // s_dataStorage slot
+    )
+        internal
+    {
+        bytes32 storageBase = keccak256(abi.encode(propertyHash, uint256(6))); // s_dataStorage slot
 
         // EnumerableSet.Bytes32Set bookkeeping
-        vm.store(address(propertyDataConsensus), storageBase, bytes32(uint256(1)));
+        vm.store(
+            address(propertyDataConsensus), storageBase, bytes32(uint256(1))
+        );
         bytes32 arraySlot = keccak256(abi.encode(storageBase));
         vm.store(address(propertyDataConsensus), arraySlot, dataGroupHash);
         bytes32 indexSlot =
