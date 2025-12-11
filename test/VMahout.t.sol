@@ -4,10 +4,12 @@ pragma solidity ^0.8.28;
 import { Test, console } from "forge-std/Test.sol";
 import { VMahout } from "contracts/VMahout.sol";
 import { Upgrades, Options } from "@openzeppelin-upgrades/Upgrades.sol";
-import { AccessControlUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { IAccessControl } from
-    "@openzeppelin/contracts/access/IAccessControl.sol";
+import {
+    AccessControlUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {
+    IAccessControl
+} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 contract VMahoutTest is Test {
     VMahout public vMahout;
@@ -102,5 +104,31 @@ contract VMahoutTest is Test {
 
         uint256 totalMinted = firstMintAmount + secondMintAmount;
         assertEq(vMahout.totalSupply(), totalMinted, "Total supply incorrect");
+    }
+
+    function test_Burning_MinterCanBurn() public {
+        vm.prank(minter);
+        vMahout.mint(user1, 2 ether);
+
+        vm.prank(minter);
+        vMahout.burn(user1, 1 ether);
+
+        assertEq(vMahout.balanceOf(user1), 1 ether, "Balance not reduced");
+        assertEq(vMahout.totalSupply(), 1 ether, "Supply not reduced");
+    }
+
+    function test_Burning_NonMinterCannotBurn() public {
+        vm.prank(minter);
+        vMahout.mint(user1, 1 ether);
+
+        vm.prank(user1);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                user1,
+                MINTER_ROLE
+            )
+        );
+        vMahout.burn(user1, 1 ether);
     }
 }

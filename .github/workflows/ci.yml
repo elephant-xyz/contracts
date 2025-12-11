@@ -38,6 +38,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4

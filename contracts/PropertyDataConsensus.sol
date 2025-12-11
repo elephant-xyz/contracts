@@ -1,16 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { Initializable } from
-    "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { AccessControlUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { UUPSUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { EnumerableSet } from
-    "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { EnumerableMap } from
-    "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import {
+    Initializable
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {
+    AccessControlUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {
+    UUPSUpgradeable
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {
+    EnumerableSet
+} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {
+    EnumerableMap
+} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import { Hashes } from "@openzeppelin/contracts/utils/cryptography/Hashes.sol";
 import { VMahout } from "./VMahout.sol";
 
 /**
@@ -38,17 +44,19 @@ contract PropertyDataConsensus is
     event DataGroupHeartBeat(
         bytes32 indexed propertyHash,
         bytes32 indexed dataGroupHash,
-        bytes32 indexed dataHash,
-        address submitter
+        address indexed submitter,
+        bytes32 dataHash
     );
 
     // --- Structs ---
+    // @deprecated
     struct DataVersion {
         bytes32 dataHash;
         address[] oracles;
         uint256 timestamp;
     }
 
+    // @deprecated
     struct DataItem {
         bytes32 propertyHash;
         bytes32 dataGroupHash;
@@ -58,6 +66,12 @@ contract PropertyDataConsensus is
     struct DataSubmission {
         address oracle;
         uint256 timestamp;
+    }
+
+    struct DataCell {
+        address oracle;
+        uint64 timestamp;
+        bytes32 dataHash;
     }
 
     // @deprecated there is no consensus rule for the oracle submission anymore
@@ -78,12 +92,20 @@ contract PropertyDataConsensus is
 
     bytes32 public constant LEXICON_ORACLE_MANAGER_ROLE =
         keccak256("LEXICON_ORACLE_MANAGER_ROLE");
+    uint256 private constant SEVEN_DAYS = 7 days;
 
+    // @deprecated
     mapping(bytes32 => EnumerableMap.Bytes32ToBytes32Map) private _dataStorage;
     // Key is composite hash of propertyHash and dataGroupHash to ensure uniqueness
+    // @deprecated
     mapping(bytes32 => DataSubmission) private _dataSubmissions;
 
+    mapping(bytes32 => DataCell) private s_dataCells;
+
     error EmptyBatchSubmission();
+    error ElephantProtocol__DataCellLocked(
+        bytes32 propertyHash, bytes32 dataGroupHash, address currentOracle
+    );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -98,7 +120,7 @@ contract PropertyDataConsensus is
         pure
         returns (bytes32)
     {
-        return keccak256(abi.encodePacked(propertyHash, dataGroupHash));
+        return Hashes.efficientKeccak256(propertyHash, dataGroupHash);
     }
 
     /**
@@ -117,30 +139,66 @@ contract PropertyDataConsensus is
         bytes32 dataGroupHash,
         bytes32 dataHash
     )
-        public
+        external
     {
-        _submitDataInternal(propertyHash, dataGroupHash, dataHash);
+        (bool isNew, address penalizedOracle) =
+            _submitDataInternal(propertyHash, dataGroupHash, dataHash);
+
         if (address(vMahout) != address(0)) {
-            vMahout.mint(msg.sender, 1 ether);
+            if (penalizedOracle != address(0)) {
+                vMahout.burn(penalizedOracle, 1 ether);
+            }
+            if (isNew) {
+                vMahout.mint(msg.sender, 1 ether);
+            }
         }
     }
 
-    function submitBatchData(DataItem[] calldata items) public {
+    function submitBatchData(DataItem[] calldata items) external {
         uint256 length = items.length;
-        if (length == 0) {
-            revert EmptyBatchSubmission();
-        }
-        unchecked {
-            for (uint256 i = 0; i < length; i++) {
-                _submitDataInternal(
-                    items[i].propertyHash,
-                    items[i].dataGroupHash,
-                    items[i].dataHash
-                );
+        uint256 total = 0;
+        address[] memory burnAccounts = new address[](length);
+        uint256[] memory burnAmounts = new uint256[](length);
+        uint256 burnListLength = 0;
+        for (uint256 i = 0; i < length;) {
+            (bool isNew, address penalizedOracle) = _submitDataInternal(
+                items[i].propertyHash, items[i].dataGroupHash, items[i].dataHash
+            );
+            unchecked {
+                i++;
+                if (isNew) {
+                    total += 1;
+                }
+            }
+
+            if (penalizedOracle != address(0)) {
+                uint256 j = 0;
+                for (; j < burnListLength; ++j) {
+                    if (burnAccounts[j] == penalizedOracle) {
+                        burnAmounts[j] += 1 ether;
+                        break;
+                    }
+                }
+                if (j == burnListLength) {
+                    burnAccounts[burnListLength] = penalizedOracle;
+                    burnAmounts[burnListLength] = 1 ether;
+                    unchecked {
+                        burnListLength++;
+                    }
+                }
             }
         }
         if (address(vMahout) != address(0)) {
-            vMahout.mint(msg.sender, length * 1 ether);
+            for (uint256 k = 0; k < burnListLength;) {
+                vMahout.burn(burnAccounts[k], burnAmounts[k]);
+                unchecked {
+                    ++k;
+                }
+            }
+
+            if (total > 0) {
+                vMahout.mint(msg.sender, total * 1 ether);
+            }
         }
     }
 
@@ -149,37 +207,88 @@ contract PropertyDataConsensus is
         bytes32 dataGroupHash,
         bytes32 dataHash
     )
-        internal
+        private
+        returns (bool isNew, address penalizedOracle)
     {
         address submitter = msg.sender;
-        bytes32 propertyDataHash =
-            _getPropertyHashFieldHash(propertyHash, dataHash);
-        (bool exists, bytes32 currentDataHash) =
-            _dataStorage[propertyHash].tryGet(dataGroupHash);
-        if (exists && currentDataHash == dataHash) {
-            if (_dataSubmissions[propertyDataHash].oracle == submitter) {
-                emit DataGroupHeartBeat(
-                    propertyHash, dataGroupHash, dataHash, submitter
-                );
-                _dataSubmissions[propertyDataHash].timestamp = block.timestamp;
-                return;
-            }
+        bytes32 identifier =
+            _getPropertyHashFieldHash(propertyHash, dataGroupHash);
+        DataCell memory currentDataCell = s_dataCells[identifier];
+        if (currentDataCell.oracle == address(0)) {
+            currentDataCell = _getFromLegacyStorage(propertyHash, dataGroupHash);
         }
-        _dataStorage[propertyHash].set(dataGroupHash, dataHash);
-        _dataSubmissions[propertyDataHash] =
-            DataSubmission(submitter, block.timestamp);
-        emit DataSubmitted(propertyHash, dataGroupHash, submitter, dataHash);
+        if (currentDataCell.dataHash == dataHash) {
+            if (currentDataCell.oracle == submitter) {
+                emit DataGroupHeartBeat(
+                    propertyHash, dataGroupHash, submitter, dataHash
+                );
+                s_dataCells[identifier] = DataCell({
+                    oracle: submitter,
+                    timestamp: uint64(block.timestamp),
+                    dataHash: dataHash
+                });
+                return (false, address(0));
+            } else {
+                if (block.timestamp - currentDataCell.timestamp < SEVEN_DAYS) {
+                    revert ElephantProtocol__DataCellLocked(
+                        propertyHash, dataGroupHash, currentDataCell.oracle
+                    );
+                }
+                penalizedOracle = currentDataCell.oracle;
+                emit DataGroupHeartBeat(
+                    propertyHash, dataGroupHash, submitter, dataHash
+                );
+            }
+        } else {
+            emit DataSubmitted(propertyHash, dataGroupHash, submitter, dataHash);
+        }
+        s_dataCells[identifier] = DataCell({
+            oracle: submitter,
+            timestamp: uint64(block.timestamp),
+            dataHash: dataHash
+        });
+
+        return (true, penalizedOracle);
     }
 
-    function getCurrentFieldDataHash(
+    function _getFromLegacyStorage(
+        bytes32 propertyHash,
+        bytes32 dataGroupHash
+    )
+        private
+        view
+        returns (DataCell memory)
+    {
+        (bool exists, bytes32 currentDataHash) =
+            _dataStorage[propertyHash].tryGet(dataGroupHash);
+        if (!exists) {
+            return DataCell(address(0), 0, bytes32(0));
+        }
+        bytes32 propertyDataHash =
+            _getPropertyHashFieldHash(propertyHash, currentDataHash);
+        DataSubmission storage dataSubmision =
+            _dataSubmissions[propertyDataHash];
+        return DataCell({
+            oracle: dataSubmision.oracle,
+            timestamp: uint64(dataSubmision.timestamp),
+            dataHash: currentDataHash
+        });
+    }
+
+    function getDataCell(
         bytes32 propertyHash,
         bytes32 dataGroupHash
     )
         public
         view
-        returns (bytes32)
+        returns (DataCell memory)
     {
-        return _dataStorage[propertyHash].get(dataGroupHash);
+        DataCell memory dataCell =
+            s_dataCells[_getPropertyHashFieldHash(propertyHash, dataGroupHash)];
+        if (dataCell.oracle == address(0)) {
+            dataCell = _getFromLegacyStorage(propertyHash, dataGroupHash);
+        }
+        return dataCell;
     }
 
     function _authorizeUpgrade(address newImplementation)
