@@ -61,11 +61,23 @@ contract VMahout is
         _grantRole(UPGRADER_ROLE, upgrader);
     }
 
-    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
+    function mint(
+        address to,
+        uint256 amount
+    )
+        public
+        onlyRole(MINTER_ROLE)
+    {
         _mint(to, amount);
     }
 
-    function burn(address account, uint256 value) public onlyRole(MINTER_ROLE) {
+    function burn(
+        address account,
+        uint256 value
+    )
+        public
+        onlyRole(MINTER_ROLE)
+    {
         _burn(account, value);
     }
 
