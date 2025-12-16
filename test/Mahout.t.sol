@@ -69,7 +69,10 @@ contract MahoutTest is Test {
         );
     }
 
-    function test_Initialization_ShouldMintInitialSupplyToRecipient() public view {
+    function test_Initialization_ShouldMintInitialSupplyToRecipient()
+        public
+        view
+    {
         assertEq(
             mahout.balanceOf(recipient),
             INITIAL_MINT,
@@ -79,7 +82,9 @@ contract MahoutTest is Test {
 
     function test_Initialization_ShouldSetCorrectTotalSupply() public view {
         assertEq(
-            mahout.totalSupply(), INITIAL_MINT, "Total supply should be initial mint"
+            mahout.totalSupply(),
+            INITIAL_MINT,
+            "Total supply should be initial mint"
         );
     }
 
@@ -92,7 +97,8 @@ contract MahoutTest is Test {
             "User1 should not have admin role"
         );
         assertFalse(
-            mahout.hasRole(MINTER_ROLE, user1), "User1 should not have minter role"
+            mahout.hasRole(MINTER_ROLE, user1),
+            "User1 should not have minter role"
         );
         assertFalse(
             mahout.hasRole(UPGRADER_ROLE, user1),
@@ -183,27 +189,6 @@ contract MahoutTest is Test {
         mahout.grantRole(UPGRADER_ROLE, user1);
     }
 
-    // ==================== Minter Role Restriction Tests ====================
-    // 2. Minter role is only assigned during initialization
-
-    function test_MinterRole_CannotBeGrantedByAdmin() public {
-        vm.prank(admin);
-        vm.expectRevert(Mahout.Mahout__MinterNotAssignable.selector);
-        mahout.grantRole(MINTER_ROLE, user1);
-    }
-
-    function test_MinterRole_CannotBeGrantedToExistingMinter() public {
-        vm.prank(admin);
-        vm.expectRevert(Mahout.Mahout__MinterNotAssignable.selector);
-        mahout.grantRole(MINTER_ROLE, minter);
-    }
-
-    function test_MinterRole_CannotBeGrantedToAnyAddress() public {
-        vm.prank(admin);
-        vm.expectRevert(Mahout.Mahout__MinterNotAssignable.selector);
-        mahout.grantRole(MINTER_ROLE, address(0x123));
-    }
-
     function test_MinterRole_AdminCanRevokeMinterRole() public {
         vm.prank(admin);
         mahout.revokeRole(MINTER_ROLE, minter);
@@ -227,15 +212,6 @@ contract MahoutTest is Test {
             )
         );
         mahout.mint(user1, 1000 ether);
-    }
-
-    function test_MinterRole_CannotBeReassignedAfterRevocation() public {
-        vm.prank(admin);
-        mahout.revokeRole(MINTER_ROLE, minter);
-
-        vm.prank(admin);
-        vm.expectRevert(Mahout.Mahout__MinterNotAssignable.selector);
-        mahout.grantRole(MINTER_ROLE, minter);
     }
 
     // ==================== Minting Tests ====================
@@ -384,7 +360,9 @@ contract MahoutTest is Test {
         mahout.mint(user1, remaining);
 
         assertEq(mahout.totalSupply(), MAX_SUPPLY, "Should be at max supply");
-        assertEq(mahout.balanceOf(user1), remaining, "User1 should have remaining");
+        assertEq(
+            mahout.balanceOf(user1), remaining, "User1 should have remaining"
+        );
     }
 
     // ==================== Transfer Tests ====================
@@ -438,8 +416,9 @@ contract MahoutTest is Test {
         bytes32 structHash = keccak256(
             abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonce, deadline)
         );
-        bytes32 digest =
-            keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", domainSeparator, structHash)
+        );
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
 
@@ -539,16 +518,6 @@ contract MahoutTest is Test {
         mahout.grantRole(UPGRADER_ROLE, grantee);
     }
 
-    function testFuzz_MinterRole_CannotBeGrantedToAnyAddress(address grantee)
-        public
-    {
-        vm.assume(grantee != address(0));
-
-        vm.prank(admin);
-        vm.expectRevert(Mahout.Mahout__MinterNotAssignable.selector);
-        mahout.grantRole(MINTER_ROLE, grantee);
-    }
-
     function testFuzz_Transfer_ShouldWorkWithValidAmounts(uint96 amount)
         public
     {
@@ -610,7 +579,9 @@ contract MahoutTest is Test {
         vm.stopPrank();
 
         assertLe(
-            mahout.totalSupply(), MAX_SUPPLY, "Total supply should not exceed max"
+            mahout.totalSupply(),
+            MAX_SUPPLY,
+            "Total supply should not exceed max"
         );
         assertEq(mahout.balanceOf(user1), amount1, "User1 balance incorrect");
         assertEq(mahout.balanceOf(user2), amount2, "User2 balance incorrect");
@@ -652,7 +623,10 @@ contract MahoutTest is Test {
 
     // ==================== Access Control Inheritance Tests ====================
 
-    function test_AccessControl_DefaultAdminRoleIsAdminOfAllRoles() public view {
+    function test_AccessControl_DefaultAdminRoleIsAdminOfAllRoles()
+        public
+        view
+    {
         assertEq(
             mahout.getRoleAdmin(MINTER_ROLE),
             DEFAULT_ADMIN_ROLE,
@@ -705,7 +679,9 @@ contract MahoutTest is Test {
         mahout.transfer(user2, 500 ether);
 
         assertEq(
-            mahout.balanceOf(user1), 500 ether, "User1 balance should be 500 ether"
+            mahout.balanceOf(user1),
+            500 ether,
+            "User1 balance should be 500 ether"
         );
         assertEq(
             mahout.balanceOf(user2),

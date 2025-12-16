@@ -52,18 +52,6 @@ contract Mahout is
         _grantRole(UPGRADER_ROLE, upgrader);
     }
 
-    function grantRole(
-        bytes32 role,
-        address account
-    )
-        public
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        if (role == MINTER_ROLE) revert Mahout__MinterNotAssignable();
-        _grantRole(role, account);
-    }
-
     function mint(
         address to,
         uint256 amount

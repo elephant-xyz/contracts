@@ -67,3 +67,11 @@ jobs:
         env:
           VMAHOUT_PROXY: "0x940a9bb3ffd84EB20A69A827F91AeDB823843368"
           MINTER_ADDRESS: "0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18"
+
+      # TODO: Update MAHOUT_PROXY with actual test proxy address once deployed
+      # Note: MINTER_ROLE can only be set during initialization, not during upgrades
+      - name: Upgrade Mahout (Dry Run)
+        run: just upgrade-mahout-prod polygon
+        env:
+          MAHOUT_PROXY: ${{ secrets.MAHOUT_PROXY_TEST }}
+          MINTER_ADDRESS: "0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18"
