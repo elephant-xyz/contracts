@@ -26,7 +26,6 @@ contract Mahout is
     uint256 public constant MAX_SUPPLY = 150_000_000 * 10 ** 18;
 
     error Mahout__MintingImpossible();
-    error Mahout__MinterNotAssignable();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -46,7 +45,32 @@ contract Mahout is
         __AccessControl_init();
         __ERC20Permit_init("Mahout");
 
-        _mint(recipient, 50_000_000);
+        _mint(recipient, 50_000_000 * 10 ** 18);
+        _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
+        _grantRole(MINTER_ROLE, minter);
+        _grantRole(UPGRADER_ROLE, upgrader);
+    }
+
+    /// @notice Reinitializer for upgrading from v1 to v2
+    /// @dev Used when upgrading from the placeholder contract to the full ERC20 implementation
+    /// @param recipient Address that receives the initial token supply
+    /// @param defaultAdmin Address that gets DEFAULT_ADMIN_ROLE
+    /// @param minter Address that gets MINTER_ROLE
+    /// @param upgrader Address that gets UPGRADER_ROLE
+    function initializeV2(
+        address recipient,
+        address defaultAdmin,
+        address minter,
+        address upgrader
+    )
+        public
+        reinitializer(2)
+    {
+        __ERC20_init("Mahout", "MHT");
+        __AccessControl_init();
+        __ERC20Permit_init("Mahout");
+
+        _mint(recipient, 50_000_000 * 10 ** 18);
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
         _grantRole(MINTER_ROLE, minter);
         _grantRole(UPGRADER_ROLE, upgrader);

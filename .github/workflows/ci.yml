@@ -73,5 +73,5 @@ jobs:
       - name: Upgrade Mahout (Dry Run)
         run: just upgrade-mahout-prod polygon
         env:
-          MAHOUT_PROXY: ${{ secrets.MAHOUT_PROXY_TEST }}
+          MAHOUT_PROXY: "0x55378a241988CF4bd131e0d986A67b69D3F6B32E"
           MINTER_ADDRESS: "0x9bA70DA0Fcc5619C80b817276eBb94a4b59b2D18"
