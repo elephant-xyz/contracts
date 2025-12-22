@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { Test, console } from "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 import { Mahout } from "contracts/Mahout.sol";
-import { Upgrades, Options } from "@openzeppelin-upgrades/Upgrades.sol";
+import { Upgrades } from "@openzeppelin-upgrades/Upgrades.sol";
 import {
     AccessControlUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {
     IAccessControl
 } from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {
+    IERC20Errors
+} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 contract MahoutTest is Test {
     Mahout public mahout;
@@ -294,10 +297,17 @@ contract MahoutTest is Test {
     }
 
     function test_Minting_ZeroAmount() public {
+        uint256 supplyBefore = mahout.totalSupply();
+
         vm.prank(minter);
         mahout.mint(user1, 0);
 
         assertEq(mahout.balanceOf(user1), 0, "Balance should be zero");
+        assertEq(
+            mahout.totalSupply(),
+            supplyBefore,
+            "Total supply should be unchanged"
+        );
     }
 
     // ==================== Max Supply Tests ====================
@@ -395,6 +405,32 @@ contract MahoutTest is Test {
         assertEq(mahout.balanceOf(user2), amount, "User2 should receive tokens");
     }
 
+    function test_Transfer_ShouldRevertWhenInsufficientBalance() public {
+        uint256 amount = 100;
+
+        vm.prank(user1);
+        vm.expectRevert();
+        mahout.transfer(user2, amount);
+
+        assertEq(mahout.balanceOf(user1), 0, "User1 balance should remain zero");
+        assertEq(mahout.balanceOf(user2), 0, "User2 balance should remain zero");
+    }
+
+    function test_TransferFrom_ShouldRevertWhenInsufficientAllowance() public {
+        uint256 amount = 100;
+
+        vm.prank(user1);
+        vm.expectRevert();
+        mahout.transferFrom(recipient, user2, amount);
+
+        assertEq(
+            mahout.balanceOf(recipient),
+            INITIAL_MINT,
+            "Recipient balance should remain unchanged"
+        );
+        assertEq(mahout.balanceOf(user2), 0, "User2 balance should remain zero");
+    }
+
     // ==================== ERC20Permit Tests ====================
 
     function test_Permit_ShouldWorkWithValidSignature() public {
@@ -429,12 +465,109 @@ contract MahoutTest is Test {
         );
     }
 
+    function test_Permit_ShouldRevertWhenDeadlineExpired() public {
+        uint256 privateKey = 0xA11CE;
+        address owner = vm.addr(privateKey);
+        address spender = user1;
+        uint256 value = 1000;
+        uint256 deadline = block.timestamp - 1; // Past deadline
+
+        vm.prank(minter);
+        mahout.mint(owner, value);
+
+        bytes32 domainSeparator = mahout.DOMAIN_SEPARATOR();
+        bytes32 PERMIT_TYPEHASH = keccak256(
+            "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+        );
+        uint256 nonce = mahout.nonces(owner);
+
+        bytes32 structHash = keccak256(
+            abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonce, deadline)
+        );
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", domainSeparator, structHash)
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+
+        vm.expectRevert();
+        mahout.permit(owner, spender, value, deadline, v, r, s);
+    }
+
+    function test_Permit_ShouldRevertWithInvalidSignature() public {
+        uint256 privateKey = 0xA11CE;
+        address owner = vm.addr(privateKey);
+        address spender = user1;
+        uint256 value = 1000;
+        uint256 deadline = block.timestamp + 1 days;
+
+        vm.prank(minter);
+        mahout.mint(owner, value);
+
+        bytes32 domainSeparator = mahout.DOMAIN_SEPARATOR();
+        bytes32 PERMIT_TYPEHASH = keccak256(
+            "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+        );
+        uint256 nonce = mahout.nonces(owner);
+
+        bytes32 structHash = keccak256(
+            abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonce, deadline)
+        );
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", domainSeparator, structHash)
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+        // Tamper with signature by changing r
+        r = bytes32(uint256(r) + 1);
+
+        vm.expectRevert();
+        mahout.permit(owner, spender, value, deadline, v, r, s);
+    }
+
+    function test_Permit_ShouldIncrementNonce() public {
+        uint256 privateKey = 0xA11CE;
+        address owner = vm.addr(privateKey);
+        address spender = user1;
+        uint256 value = 1000;
+        uint256 deadline = block.timestamp + 1 days;
+
+        vm.prank(minter);
+        mahout.mint(owner, value);
+
+        uint256 nonceBefore = mahout.nonces(owner);
+
+        bytes32 domainSeparator = mahout.DOMAIN_SEPARATOR();
+        bytes32 PERMIT_TYPEHASH = keccak256(
+            "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+        );
+        uint256 nonce = mahout.nonces(owner);
+
+        bytes32 structHash = keccak256(
+            abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonce, deadline)
+        );
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", domainSeparator, structHash)
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+
+        mahout.permit(owner, spender, value, deadline, v, r, s);
+
+        assertEq(
+            mahout.allowance(owner, spender), value, "Allowance should be set"
+        );
+        assertEq(
+            mahout.nonces(owner), nonceBefore + 1, "Nonce should increment by 1"
+        );
+    }
+
     // ==================== Fuzz Tests ====================
     // 5. Fuzz testing for minting and permissions
 
     function testFuzz_Minting_MinterCanMintValidAmount(uint96 amount) public {
         uint256 remainingSupply = MAX_SUPPLY - mahout.totalSupply();
-        vm.assume(amount <= remainingSupply);
+        amount = uint96(bound(amount, 0, remainingSupply));
 
         uint256 supplyBefore = mahout.totalSupply();
         uint256 balanceBefore = mahout.balanceOf(user1);
@@ -476,7 +609,9 @@ contract MahoutTest is Test {
         mahout.mint(user1, amount);
     }
 
-    function testFuzz_MaxSupply_CannotExceedMax(uint96 extraAmount) public {
+    function test_EdgeCase_MintingBlockedAtMaxSupply(uint96 extraAmount)
+        public
+    {
         vm.assume(extraAmount > 0);
 
         uint256 remainingSupply = MAX_SUPPLY - mahout.totalSupply();
@@ -591,7 +726,11 @@ contract MahoutTest is Test {
 
     function test_EdgeCase_MintToZeroAddressReverts() public {
         vm.prank(minter);
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IERC20Errors.ERC20InvalidReceiver.selector, address(0)
+            )
+        );
         mahout.mint(address(0), 1000 ether);
     }
 

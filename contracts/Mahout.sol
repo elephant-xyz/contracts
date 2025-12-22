@@ -13,7 +13,7 @@ import {
 } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 import {
     UUPSUpgradeable
-} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 contract Mahout is
     ERC20Upgradeable,
@@ -66,6 +66,12 @@ contract Mahout is
         public
         reinitializer(2)
     {
+        require(recipient != address(0), "Mahout: recipient is zero address");
+        require(
+            defaultAdmin != address(0), "Mahout: defaultAdmin is zero address"
+        );
+        require(minter != address(0), "Mahout: minter is zero address");
+        require(upgrader != address(0), "Mahout: upgrader is zero address");
         __ERC20_init("Mahout", "MHT");
         __AccessControl_init();
         __ERC20Permit_init("Mahout");

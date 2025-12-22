@@ -1,4 +1,4 @@
-# Elephant Protocl Smart Contracts
+# Elephant Protocol Smart Contracts
 
 This repository contains the smart contracts for the vMahout ecosystem, including the vMahout governance token and PropertyDataConsensus system.
 
