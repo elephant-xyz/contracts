@@ -82,13 +82,7 @@ contract Mahout is
         _grantRole(UPGRADER_ROLE, upgrader);
     }
 
-    function mint(
-        address to,
-        uint256 amount
-    )
-        public
-        onlyRole(MINTER_ROLE)
-    {
+    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
         if (amount + totalSupply() > MAX_SUPPLY) {
             revert Mahout__MintingImpossible();
         }
