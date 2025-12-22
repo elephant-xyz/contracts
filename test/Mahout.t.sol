@@ -25,7 +25,7 @@ contract MahoutTest is Test {
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
     uint256 public constant MAX_SUPPLY = 150_000_000 * 10 ** 18;
-    uint256 public constant INITIAL_MINT = 50_000_000;
+    uint256 public constant INITIAL_MINT = 50_000_000 * 10 ** 18;
 
     function setUp() public {
         bytes memory proxyData = abi.encodeWithSignature(
