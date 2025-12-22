@@ -9,14 +9,14 @@ contract UpgradeMahoutScript is Script {
     function run() external {
         address proxyAddress = vm.envAddress("MAHOUT_PROXY");
         bool skipValidation = vm.envOr("SKIP_VALIDATION", false);
-        
+
         // Get initialization parameters for initializeV2
         // If RECIPIENT_ADDRESS is not set, initData will be empty (no reinitialization)
         address recipient = vm.envOr("RECIPIENT_ADDRESS", address(0));
         address defaultAdmin = vm.envOr("DEFAULT_ADMIN_ADDRESS", address(0));
         address minter = vm.envOr("MINTER_ADDRESS", address(0));
         address upgrader = vm.envOr("UPGRADER_ADDRESS", address(0));
-        
+
         // Prepare initialization data
         bytes memory initData;
         if (recipient != address(0)) {
@@ -25,13 +25,14 @@ contract UpgradeMahoutScript is Script {
             console.log("  Default Admin:", defaultAdmin);
             console.log("  Minter:", minter);
             console.log("  Upgrader:", upgrader);
-            
+
             initData = abi.encodeCall(
-                Mahout.initializeV2,
-                (recipient, defaultAdmin, minter, upgrader)
+                Mahout.initializeV2, (recipient, defaultAdmin, minter, upgrader)
             );
         } else {
-            console.log("No initialization parameters provided, upgrading without reinitialization");
+            console.log(
+                "No initialization parameters provided, upgrading without reinitialization"
+            );
         }
 
         vm.startBroadcast();
@@ -54,7 +55,9 @@ contract UpgradeMahoutScript is Script {
             Options memory opts;
             opts.unsafeSkipAllChecks = true;
 
-            Upgrades.upgradeProxy(proxyAddress, "Mahout.sol:Mahout", initData, opts);
+            Upgrades.upgradeProxy(
+                proxyAddress, "Mahout.sol:Mahout", initData, opts
+            );
         } else {
             console.log("Using reference build for validation...");
             // Set up options with reference to previous build
@@ -63,7 +66,9 @@ contract UpgradeMahoutScript is Script {
             opts.referenceContract = "foundry-v1:contracts/Mahout.sol:Mahout";
 
             // Upgrade the proxy to new implementation
-            Upgrades.upgradeProxy(proxyAddress, "Mahout.sol:Mahout", initData, opts);
+            Upgrades.upgradeProxy(
+                proxyAddress, "Mahout.sol:Mahout", initData, opts
+            );
         }
 
         vm.stopBroadcast();
