@@ -54,13 +54,11 @@ contract Mahout is
     }
 
     /// @notice Reinitializer for upgrading from v1 to v2
-    /// @dev Used when upgrading from the placeholder contract to the full ERC20 implementation
-    /// @param recipient Address that receives the initial token supply
+    /// @dev Used when upgrading from the placeholder contract to the full ERC20 implementation and mint initial tokens.
     /// @param defaultAdmin Address that gets DEFAULT_ADMIN_ROLE
     /// @param minter Address that gets MINTER_ROLE
     /// @param upgrader Address that gets UPGRADER_ROLE
     function initializeV2(
-        address recipient,
         address defaultAdmin,
         address minter,
         address upgrader
@@ -68,7 +66,6 @@ contract Mahout is
         public
         reinitializer(2)
     {
-        require(recipient != address(0), "Mahout: recipient is zero address");
         require(
             defaultAdmin != address(0), "Mahout: defaultAdmin is zero address"
         );
@@ -78,7 +75,14 @@ contract Mahout is
         __AccessControl_init();
         __ERC20Permit_init("Mahout");
 
-        _mint(recipient, 50_000_000 * 10 ** 18);
+        _mint(0xBc746D0AEeEb3c739AA59621D01ffAcE7946BE74, 31_818_182 * 10 ** 18);
+        _mint(0x0000000000000000000000000000000000000000, 6_595_238 * 10 ** 18);
+        _mint(0x0000000000000000000000000000000000000000, 6_595_238 * 10 ** 18);
+        _mint(0x12292e9FB05c75c53681366e604EA9E057fC7b89, 2_727_273 * 10 ** 18);
+        _mint(0x8e46E2bff0c5ED89447b5d64c4055daFda88dE16, 909_091 * 10 ** 18);
+        _mint(0x797D6fbdd6A84137CBaFC56f2203242BBc2839C1, 909_091 * 10 ** 18);
+        _mint(0xc54B0C869D7670E1A66223C5090cC74a3f7Bf7A9, 303_030 * 10 ** 18);
+        _mint(0x0000000000000000000000000000000000000000, 142_857 * 10 ** 18);
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
         _grantRole(MINTER_ROLE, minter);
         _grantRole(UPGRADER_ROLE, upgrader);
