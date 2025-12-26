@@ -1,4 +1,4 @@
-# vMahout Smart Contracts
+# Elephant Protocol Smart Contracts
 
 This repository contains the smart contracts for the vMahout ecosystem, including the vMahout governance token and PropertyDataConsensus system.
 
@@ -8,6 +8,7 @@ This repository contains the smart contracts for the vMahout ecosystem, includin
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------- | ------------------------------------------------------------------ |
 | vMahout               | [0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18](https://polygonscan.com/address/0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18) | Polygon Mainnet | Non-transferable ERC-20 governance token with minting capabilities |
 | PropertyDataConsensus | [0x525E59e4DE2B51f52B9e30745a513E407652AB7c](https://polygonscan.com/address/0x525E59e4DE2B51f52B9e30745a513E407652AB7c) | Polygon Mainnet | Permissionless consensus system for property data validation       |
+| Mahout                | [0xF7B26dEDDc5EfF1F0253bC0452244822951c1C97](https://polygonscan.com/address/0xF7B26dEDDc5EfF1F0253bC0452244822951c1C97) | Polygon Mainnet | ERC-20 token used by protocol                                      |
 
 ## Contract Overview
 
@@ -32,37 +33,17 @@ This repository contains the smart contracts for the vMahout ecosystem, includin
   - Comprehensive consensus history tracking
   - Upgradeable via UUPS proxy pattern
 
-#### Configurable Consensus Thresholds
+### Mahout Token (Mahout.sol)
 
-The PropertyDataConsensus contract supports both global and per-data-group consensus thresholds:
+- **Purpose**: ERC-20 token used by the protocol with controlled supply and minting
+- **Features**:
+  - Standard ERC-20 functionality with permit extension
+  - Maximum supply capped at 150 million tokens
+  - Initial mint of 50 million tokens to designated recipient
+  - Role-based minting controlled by MINTER_ROLE
+  - Upgradeable via UUPS proxy pattern
+  - Dual initialization support (standard and reinitializer for v2 upgrades)
 
-- **Global Threshold**: Set during initialization or via `updateMinimumConsensus()` (requires DEFAULT_ADMIN_ROLE)
-- **Per-Data-Group Threshold**: Can be set using `setConsensusRequired()` (requires LEXICON_ORACLE_MANAGER_ROLE)
-
-The per-data-group threshold allows fine-grained control over consensus requirements for different types of data. For example:
-
-- Critical property valuations might require 5 oracles
-- Less critical metadata might only require 3 oracles
-
-**Usage Example**:
-
-```solidity
-// Grant LEXICON_ORACLE_MANAGER_ROLE to an address
-consensus.grantRole(LEXICON_ORACLE_MANAGER_ROLE, managerAddress);
-
-// Set custom threshold for a specific data group (minimum 3)
-consensus.setConsensusRequired(dataGroupHash, 5);
-```
-
-## Integration
-
-The PropertyDataConsensus contract integrates with the vMahout token to automatically mint rewards (0.016 vMahout tokens) to oracles when they participate in successful consensus rounds.
-
-## Role Management
-
-### Granting LEXICON_ORACLE_MANAGER_ROLE
-
-The LEXICON_ORACLE_MANAGER_ROLE can be granted through GitHub Actions workflows.
 
 ## Development
 

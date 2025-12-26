@@ -316,6 +316,91 @@ upgrade-vmahout-prod network="polygon":
         --slow \
         -vvvv
 
+# Upgrade Mahout contract (local)
+upgrade-mahout-local:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Build reference first (unless skipping validation)
+    if [[ "${SKIP_VALIDATION:-false}" != "true" ]]; then
+        just build-reference
+    fi
+    
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
+    forge build
+    
+    # Run upgrade
+    forge script script/UpgradeMahout.s.sol \
+        --rpc-url http://localhost:8545 \
+        --broadcast \
+        -vvvv
+
+# Upgrade Mahout contract
+upgrade-mahout network="amoy":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Build reference first (unless skipping validation)
+    if [[ "${SKIP_VALIDATION:-false}" != "true" ]]; then
+        just build-reference
+    fi
+    
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
+    forge build
+    
+    # Run upgrade
+    forge script script/UpgradeMahout.s.sol \
+        --rpc-url {{network}} \
+        --broadcast \
+        --verify \
+        -vvvv
+
+# Dry run upgrade Mahout (for CI)
+upgrade-mahout-dry-run network="polygon":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Build reference first (unless skipping validation)
+    if [[ "${SKIP_VALIDATION:-false}" != "true" ]]; then
+        just build-reference
+    fi
+    
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
+    forge build
+    
+    # Run dry run upgrade
+    forge script script/UpgradeMahout.s.sol \
+        --rpc-url {{network}} \
+        --aws \
+        --sender $(cast wallet address --aws) \
+        --slow
+
+# Production upgrade Mahout (for release)
+upgrade-mahout-prod network="polygon":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Build reference first
+    just build-reference
+    
+    # Build current contracts (force full compilation for upgrade validation)
+    forge clean
+    forge build
+    
+    # Run production upgrade
+    forge script script/UpgradeMahout.s.sol \
+        --rpc-url {{network}} \
+        --broadcast \
+        --verify \
+        --etherscan-api-key $POLYGONSCAN_API_KEY \
+        --aws \
+        --sender $(cast wallet address --aws) \
+        --slow \
+        -vvvv
+
 # Grant LEXICON_ORACLE_MANAGER_ROLE
 grant-roles network="polygon":
     #!/usr/bin/env bash

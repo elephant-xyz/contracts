@@ -61,3 +61,9 @@ jobs:
         env:
           VMAHOUT_PROXY: "0x3b3ad74fF6840fA5Ff5E65b551fC5E8ed13c3F18"
           MINTER_ADDRESS: "0x525E59e4DE2B51f52B9e30745a513E407652AB7c"
+
+      - name: Upgrade Mahout
+        run: just upgrade-mahout-prod polygon
+        env:
+          MAHOUT_PROXY: "0xF7B26dEDDc5EfF1F0253bC0452244822951c1C97"
+          MINTER_ADDRESS: "0x525E59e4DE2B51f52B9e30745a513E407652AB7c"
